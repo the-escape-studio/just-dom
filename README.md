@@ -8,7 +8,6 @@
   A lightweight JavaScript library to simplify DOM manipulation.
 
   [![npm version](https://img.shields.io/npm/v/just-dom.svg)](https://www.npmjs.com/package/just-dom)
-  [![bundle size](https://img.shields.io/bundlephobia/minzip/just-dom)](https://bundlephobia.com/package/just-dom)
   [![downloads](https://img.shields.io/npm/dt/just-dom.svg)](https://www.npmjs.com/package/just-dom)
   [![license](https://img.shields.io/npm/l/just-dom.svg)](https://github.com/yourusername/just-dom/blob/main/LICENSE)
 

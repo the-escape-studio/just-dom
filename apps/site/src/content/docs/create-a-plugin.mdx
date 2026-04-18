@@ -1,0 +1,195 @@
+---
+title: Create a Plugin
+description: Build your own Just DOM plugin with full type safety
+---
+
+A Just DOM plugin is a plain object with a `name` and an `extend` function. The `extend` function returns an object of methods that get merged onto the `DOM` object when the consumer calls `withPlugins`.
+
+## Quick Start
+
+```ts
+import { definePlugin } from "just-dom";
+
+export const greetPlugin = definePlugin({
+  name: "greet",
+  extend: () => ({
+    greeting: (name: string): HTMLDivElement => {
+      const el = document.createElement("div");
+      el.textContent = `Hello, ${name}!`;
+      return el;
+    },
+  }),
+});
+```
+
+That's it. Consumers can now use it:
+
+```ts
+import DOM, { withPlugins } from "just-dom";
+import { greetPlugin } from "./greet-plugin";
+
+const $ = withPlugins(DOM, [greetPlugin]);
+
+const el = $.greeting("World");
+// el is HTMLDivElement, fully typed
+```
+
+## The Plugin Interface
+
+```ts
+interface JDPlugin<TExtension> {
+  name: string;
+  extend: () => TExtension;
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | `string` | A unique identifier for the plugin |
+| `extend` | `() => TExtension` | Returns an object of methods to add to the DOM object |
+
+The `TExtension` generic is a `Record<string, (...args: any[]) => any>` — an object where every value is a function. TypeScript infers the exact shape from your `extend` return type.
+
+## definePlugin
+
+`definePlugin` is an identity function that provides type inference. It doesn't transform the plugin — it just helps TypeScript infer the extension type correctly.
+
+```ts
+import { definePlugin } from "just-dom";
+
+// Without definePlugin — you'd need to annotate the type manually
+const plugin: JDPlugin<{ myMethod: (x: number) => string }> = {
+  name: "manual",
+  extend: () => ({
+    myMethod: (x: number) => String(x),
+  }),
+};
+
+// With definePlugin — the type is inferred automatically
+const plugin = definePlugin({
+  name: "auto",
+  extend: () => ({
+    myMethod: (x: number) => String(x),
+  }),
+});
+```
+
+## Using Just DOM Internals
+
+Plugins can import and use any export from `just-dom`:
+
+```ts
+import { definePlugin, createElement } from "just-dom";
+import type { JDCreateElementOptions } from "just-dom";
+
+export const cardPlugin = definePlugin({
+  name: "card",
+  extend: () => ({
+    card: (
+      props: JDCreateElementOptions<"div">,
+      title: string,
+      body: string,
+    ): HTMLDivElement => {
+      return createElement("div", { ...props, className: "card" }, [
+        createElement("h3", {}, [title]),
+        createElement("p", {}, [body]),
+      ]);
+    },
+  }),
+});
+```
+
+## Generic Plugins (Factory Pattern)
+
+For plugins that need configuration, use a factory function. This is how `just-dom-lucide` works — the factory accepts a config object and returns a plugin with types derived from that config.
+
+```ts
+import { definePlugin } from "just-dom";
+
+interface ToastOptions {
+  duration?: number;
+  position?: "top" | "bottom";
+}
+
+export function createToastPlugin(defaults: ToastOptions = {}) {
+  return definePlugin({
+    name: "toast",
+    extend: () => ({
+      toast: (message: string, options?: ToastOptions): HTMLDivElement => {
+        const merged = { ...defaults, ...options };
+        const el = document.createElement("div");
+        el.className = `toast toast-${merged.position ?? "bottom"}`;
+        el.textContent = message;
+        document.body.appendChild(el);
+
+        setTimeout(() => el.remove(), merged.duration ?? 3000);
+
+        return el;
+      },
+    }),
+  });
+}
+```
+
+Usage:
+
+```ts
+import DOM, { withPlugins } from "just-dom";
+import { createToastPlugin } from "./toast-plugin";
+
+const $ = withPlugins(DOM, [
+  createToastPlugin({ duration: 5000, position: "top" }),
+]);
+
+$.toast("Saved successfully!");
+```
+
+## Publishing a Plugin
+
+When publishing a plugin as an npm package:
+
+1. List `just-dom` as a **peer dependency**, not a regular dependency
+2. Build with both CJS and ESM formats (tsup makes this easy)
+3. Include TypeScript declarations (`.d.ts` / `.d.mts`)
+4. Use `just-dom-` as a naming convention (e.g. `just-dom-toast`, `just-dom-lucide`)
+
+Example `package.json`:
+
+```json
+{
+  "name": "just-dom-my-plugin",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "peerDependencies": {
+    "just-dom": ">=1.0.0"
+  }
+}
+```
+
+## Type Safety
+
+The type system automatically merges plugin extensions onto the `DOM` type. When using `withPlugins`, the return type is:
+
+```ts
+JDom & MergePluginExtensions<Plugins>
+```
+
+This means:
+
+- All original `DOM` methods remain fully typed
+- All plugin methods are correctly typed with their parameter and return types
+- TypeScript reports errors if you call a method that doesn't exist
+- Autocompletion works for both built-in and plugin methods

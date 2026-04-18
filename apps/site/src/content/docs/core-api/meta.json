@@ -1,0 +1,12 @@
+{
+  "title": "Core",
+  "icon": "Box",
+  "pages": [
+    "dom-object",
+    "create-element",
+    "create-ref",
+    "create-root",
+    "create-fragment",
+    "create-el-from-html-string"
+  ]
+}

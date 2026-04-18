@@ -1,0 +1,15 @@
+{
+  "pages": [
+    "---Getting Started---",
+    "index",
+    "installation",
+    "getting-started",
+    "typescript",
+    "---Plugins---",
+    "create-a-plugin",
+    "official-plugins",
+    "---API Reference---",
+    "core-api",
+    "plugin-api"
+  ]
+}

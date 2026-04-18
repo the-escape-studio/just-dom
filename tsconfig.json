@@ -1,18 +1,4 @@
 {
-    "compilerOptions": {
-        "target": "es2015",
-        "module": "es2015",
-        "declaration": true,
-        "outDir": "./dist",
-        "rootDir": "./src",
-        "strict": true,
-        "esModuleInterop": true,
-        "skipLibCheck": true,
-        "forceConsistentCasingInFileNames": true,
-        "allowJs": true,
-        "checkJs": false,
-        "emitDeclarationOnly": true
-    },
-    "include": ["src/**/*.js", "src/**/*.ts"],
-    "exclude": ["node_modules", "dist"]
+  "extends": "@workspace/typescript-config/base.json"
 }
+

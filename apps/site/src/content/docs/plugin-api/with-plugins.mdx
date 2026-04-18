@@ -1,0 +1,89 @@
+---
+title: withPlugins
+description: Extend the DOM object with one or more plugins
+---
+
+`withPlugins` takes the base `DOM` object and an array of plugins, returning a new object that includes both the original DOM methods and all plugin extensions. The return type is fully inferred by TypeScript.
+
+## Import
+
+```ts
+import { withPlugins } from "just-dom";
+```
+
+## Signature
+
+```ts
+function withPlugins<const P extends readonly JDPlugin<any>[]>(
+  dom: JDom,
+  plugins: P,
+): JDom & MergePluginExtensions<P>;
+```
+
+## Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `dom` | `JDom` | The base DOM object (default export from `just-dom`) |
+| `plugins` | `JDPlugin[]` | An array of plugins to merge |
+
+## Returns
+
+| Type | Description |
+|------|-------------|
+| `JDom & MergePluginExtensions<P>` | A new object combining all DOM methods with all plugin methods |
+
+## Usage
+
+### Single plugin
+
+```ts
+import DOM, { withPlugins } from "just-dom";
+import { lucidePlugin } from "just-dom-lucide";
+
+const $ = withPlugins(DOM, [lucidePlugin]);
+
+$.div({ className: "app" });           // built-in
+$.icon("Heart", { size: 24 });         // from plugin
+```
+
+### Multiple plugins
+
+```ts
+import DOM, { withPlugins } from "just-dom";
+import { pluginA } from "just-dom-a";
+import { pluginB } from "just-dom-b";
+
+const $ = withPlugins(DOM, [pluginA, pluginB]);
+```
+
+TypeScript merges all extension types into a single intersection, so every method from every plugin is typed correctly.
+
+## How It Works
+
+At runtime, `withPlugins` creates a shallow copy of the `DOM` object, then iterates over each plugin and calls its `extend()` method. The returned methods are merged onto the copy:
+
+```ts
+const extended = { ...dom };
+for (const plugin of plugins) {
+  Object.assign(extended, plugin.extend());
+}
+return extended;
+```
+
+The original `DOM` object is never mutated — `withPlugins` always returns a new object.
+
+## Type Utilities
+
+The return type uses two internal type utilities:
+
+| Type | Description |
+|------|-------------|
+| `ExtractPluginExtension<P>` | Extracts the `TExtension` generic from a `JDPlugin<TExtension>` |
+| `MergePluginExtensions<P[]>` | Merges all extracted extensions into a single intersection type |
+
+These are exported from `just-dom` for advanced use cases:
+
+```ts
+import type { MergePluginExtensions, JDPlugin } from "just-dom";
+```

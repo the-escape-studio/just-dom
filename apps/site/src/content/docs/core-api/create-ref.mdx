@@ -1,0 +1,102 @@
+---
+title: createRef
+description: Create a typed reference to a DOM element
+---
+
+`createRef` creates a mutable reference object that can be attached to an element, similar to React's `useRef`. This allows you to access the underlying DOM element after creation.
+
+## Import
+
+```ts
+import { createRef } from "just-dom";
+```
+
+## Signature
+
+```ts
+function createRef<T extends JDAllTags>(): JDRef<T>;
+```
+
+## Type Parameters
+
+| Parameter | Constraint | Description |
+|-----------|-----------|-------------|
+| `T` | `JDAllTags` | The tag name of the element (e.g. `"input"`, `"div"`, `"canvas"`) |
+
+## Returns
+
+| Type | Description |
+|------|-------------|
+| `JDRef<T>` | An object `{ current: JDTagsMap[T] \| null }` — initially `null`, set to the element when used as a `ref` prop |
+
+## Usage
+
+```ts
+import DOM, { createRef } from "just-dom";
+
+// 1. Create the ref
+const inputRef = createRef<"input">();
+
+// 2. Attach it to an element via the ref prop
+const input = DOM.input({
+  ref: inputRef,
+  type: "text",
+  placeholder: "Type here...",
+});
+
+// 3. Access the element later
+console.log(inputRef.current);       // HTMLInputElement
+console.log(inputRef.current?.value); // ""
+```
+
+## Examples
+
+### Form with ref
+
+```ts
+import DOM, { createRef, createRoot } from "just-dom";
+
+const nameRef = createRef<"input">();
+const emailRef = createRef<"input">();
+
+const form = DOM.form(
+  {
+    onsubmit: (e) => {
+      e.preventDefault();
+      console.log({
+        name: nameRef.current?.value,
+        email: emailRef.current?.value,
+      });
+    },
+  },
+  [
+    DOM.input({ ref: nameRef, type: "text", placeholder: "Name" }),
+    DOM.input({ ref: emailRef, type: "email", placeholder: "Email" }),
+    DOM.button({ type: "submit" }, "Submit"),
+  ]
+);
+
+createRoot("app", form);
+```
+
+### Canvas drawing
+
+```ts
+import DOM, { createRef, createRoot } from "just-dom";
+
+const canvasRef = createRef<"canvas">();
+
+const app = DOM.div({}, [
+  DOM.canvas({ ref: canvasRef, width: "400", height: "300" }),
+  DOM.button({
+    onclick: () => {
+      const ctx = canvasRef.current?.getContext("2d");
+      if (!ctx) return;
+      ctx.fillStyle = "blue";
+      ctx.fillRect(50, 50, 100, 100);
+    },
+  }, "Draw"),
+]);
+
+createRoot("app", app);
+```

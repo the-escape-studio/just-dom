@@ -1,0 +1,223 @@
+---
+title: Getting Started
+description: Learn the basics of Just DOM
+icon: Rocket
+---
+
+## Import
+
+Just DOM supports multiple import methods for maximum flexibility:
+
+```ts
+// Default import — the DOM object with all tag functions
+import DOM from "just-dom";
+
+// Named imports — individual utility functions
+import { createRef, createRoot, createElFromHTMLString } from "just-dom";
+
+// Combined
+import DOM, { createRef, createRoot } from "just-dom";
+```
+
+## Creating Elements
+
+Every HTML, SVG, and MathML tag is available as a method on the `DOM` object. Each method accepts an optional **props** object and optional **children**.
+
+```ts
+import DOM from "just-dom";
+
+// Simple element with text content
+const heading = DOM.h1({}, "Hello, world!");
+
+// Element with attributes
+const link = DOM.a({ href: "https://example.com", target: "_blank" }, "Click me");
+
+// Element with children
+const list = DOM.ul({ className: "menu" }, [
+  DOM.li({}, "Home"),
+  DOM.li({}, "About"),
+  DOM.li({}, "Contact"),
+]);
+```
+
+## Attributes, Styles, and Events
+
+All element configuration goes through a single props object:
+
+```ts
+const button = DOM.button(
+  {
+    className: "btn btn-primary",
+    id: "submit-btn",
+    disabled: false,
+    // Inline styles as an object
+    style: {
+      backgroundColor: "blue",
+      color: "white",
+      padding: "8px 16px",
+      borderRadius: "4px",
+    },
+    // Event listeners with "on" prefix
+    onclick: () => alert("Clicked!"),
+    onmouseenter: () => console.log("Hovered"),
+    // Data attributes
+    "data-action": "submit",
+  },
+  "Submit"
+);
+```
+
+### Styles
+
+Pass styles as a `Partial<CSSStyleDeclaration>` object — the same properties you would use with `element.style`:
+
+```ts
+const box = DOM.div({
+  style: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    width: "200px",
+    height: "200px",
+    backgroundColor: "#f0f0f0",
+  },
+}, "Centered content");
+```
+
+### Events
+
+Prefix any DOM event with `on` to attach a listener:
+
+```ts
+const input = DOM.input({
+  type: "text",
+  placeholder: "Type something...",
+  oninput: (e) => console.log(e.target.value),
+  onfocus: () => console.log("Focused"),
+  onblur: () => console.log("Blurred"),
+});
+```
+
+### Data Attributes
+
+Data attributes can be set using `data-*` syntax:
+
+```ts
+const card = DOM.div({
+  "data-id": "123",
+  "data-category": "featured",
+}, "Card content");
+```
+
+## Mounting to the DOM
+
+Use `createRoot` to mount your element tree into a container:
+
+```ts
+import DOM, { createRoot } from "just-dom";
+
+const app = DOM.div({ className: "app" }, [
+  DOM.header({}, [
+    DOM.h1({}, "My App"),
+  ]),
+  DOM.main({}, [
+    DOM.p({}, "Welcome to my application built with Just DOM."),
+  ]),
+]);
+
+// Mount by ID
+createRoot("app", app);
+
+// Or by element reference
+createRoot(document.body, app);
+```
+
+## Using Refs
+
+Refs let you keep a reference to a DOM element for later use:
+
+```ts
+import DOM, { createRef, createRoot } from "just-dom";
+
+const inputRef = createRef<"input">();
+
+const form = DOM.div({}, [
+  DOM.input({
+    ref: inputRef,
+    type: "text",
+    placeholder: "Enter your name",
+  }),
+  DOM.button(
+    { onclick: () => console.log(inputRef.current?.value) },
+    "Get Value"
+  ),
+]);
+
+createRoot("app", form);
+```
+
+## Fragments
+
+Group elements without adding an extra wrapper node to the DOM:
+
+```ts
+import DOM from "just-dom";
+
+const fragment = DOM.fragment([
+  DOM.h2({}, "Title"),
+  DOM.p({}, "Paragraph one"),
+  DOM.p({}, "Paragraph two"),
+]);
+
+document.body.appendChild(fragment);
+```
+
+## Full Example
+
+Here is a complete example that puts everything together:
+
+```ts
+import DOM, { createRef, createRoot } from "just-dom";
+
+const inputRef = createRef<"input">();
+const listRef = createRef<"ul">();
+
+const addItem = () => {
+  const value = inputRef.current?.value;
+  if (!value) return;
+
+  const item = DOM.li(
+    {
+      style: { padding: "8px", borderBottom: "1px solid #eee" },
+    },
+    value
+  );
+
+  listRef.current?.appendChild(item);
+  if (inputRef.current) inputRef.current.value = "";
+};
+
+const app = DOM.div({ className: "todo-app" }, [
+  DOM.h1({}, "Todo List"),
+  DOM.div({ style: { display: "flex", gap: "8px", marginBottom: "16px" } }, [
+    DOM.input({
+      ref: inputRef,
+      type: "text",
+      placeholder: "Add a new task...",
+      onkeydown: (e) => { if (e.key === "Enter") addItem(); },
+    }),
+    DOM.button({ onclick: addItem }, "Add"),
+  ]),
+  DOM.ul({ ref: listRef, style: { listStyle: "none", padding: "0" } }),
+]);
+
+createRoot("app", app);
+```
+
+## Next Steps
+
+<Cards>
+  <Card title="API Reference" href="/docs/core-api/dom-object" />
+  <Card title="TypeScript" href="/docs/typescript" />
+  <Card title="Create a Plugin" href="/docs/create-a-plugin" />
+</Cards>

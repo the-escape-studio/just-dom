@@ -1,0 +1,90 @@
+---
+title: createElFromHTMLString
+description: Parse an HTML string into a DocumentFragment
+---
+
+`createElFromHTMLString` parses a raw HTML string and returns a `DocumentFragment` containing the resulting DOM nodes. Useful for injecting server-rendered HTML or working with HTML templates.
+
+## Import
+
+```ts
+import { createElFromHTMLString } from "just-dom";
+```
+
+## Signature
+
+```ts
+function createElFromHTMLString(HTMLString: string): DocumentFragment;
+```
+
+## Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `HTMLString` | `string` | A valid HTML string to parse |
+
+## Returns
+
+| Type | Description |
+|------|-------------|
+| `DocumentFragment` | A fragment containing the parsed DOM nodes |
+
+## How It Works
+
+Under the hood, `createElFromHTMLString` uses the browser's `DOMParser` to parse the HTML string, then moves the resulting child nodes into a `DocumentFragment`.
+
+## Usage
+
+```ts
+import { createElFromHTMLString } from "just-dom";
+
+const fragment = createElFromHTMLString("<p>Hello</p><span>World</span>");
+
+document.body.appendChild(fragment);
+// Adds <p>Hello</p> and <span>World</span> to the body
+```
+
+## Examples
+
+### Injecting a template
+
+```ts
+import { createElFromHTMLString, createRoot } from "just-dom";
+
+const template = `
+  <div class="alert alert-success">
+    <strong>Success!</strong> Your changes have been saved.
+  </div>
+`;
+
+const alert = createElFromHTMLString(template);
+document.body.appendChild(alert);
+```
+
+### Combining with DOM object
+
+```ts
+import DOM, { createElFromHTMLString, createRoot } from "just-dom";
+
+const header = createElFromHTMLString(`
+  <header>
+    <h1>My App</h1>
+    <nav><a href="/">Home</a> | <a href="/about">About</a></nav>
+  </header>
+`);
+
+const app = DOM.div({ className: "app" }, [
+  ...Array.from(header.children),
+  DOM.main({}, [
+    DOM.p({}, "Content built with Just DOM."),
+  ]),
+]);
+
+createRoot("app", app);
+```
+
+## Notes
+
+- The parsing uses `DOMParser` with `text/html` mode, so the input must be valid HTML.
+- Only the children of `<body>` are extracted — `<head>` content is ignored.
+- The returned `DocumentFragment` can be appended to any element, and its children will be moved into the DOM (the fragment becomes empty after appending).

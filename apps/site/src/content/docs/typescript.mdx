@@ -1,0 +1,98 @@
+---
+title: TypeScript Support
+description: Full type safety with Just DOM
+icon: FileCode
+---
+
+Just DOM is written in TypeScript and ships with complete type declarations. **No additional `@types` packages are required.**
+
+## Type-Safe Element Creation
+
+Every tag method on the `DOM` object returns the correct element type:
+
+```ts
+import DOM from "just-dom";
+
+const div = DOM.div({});       // HTMLDivElement
+const span = DOM.span({});     // HTMLSpanElement
+const svg = DOM.svg({});       // SVGSVGElement
+const input = DOM.input({});   // HTMLInputElement
+const canvas = DOM.canvas({}); // HTMLCanvasElement
+```
+
+## Type-Safe Props
+
+Props are fully typed based on the element type. TypeScript will autocomplete available properties and catch invalid ones:
+
+```ts
+// ✅ Valid — HTMLInputElement has 'type' and 'placeholder'
+const input = DOM.input({
+  type: "text",
+  placeholder: "Enter value",
+});
+
+// ✅ Valid — HTMLAnchorElement has 'href' and 'target'
+const link = DOM.a({
+  href: "https://example.com",
+  target: "_blank",
+}, "Link");
+```
+
+## Type-Safe Refs
+
+Refs are generic and tied to a specific tag type:
+
+```ts
+import { createRef } from "just-dom";
+
+const inputRef = createRef<"input">();
+// inputRef.current is HTMLInputElement | null
+
+const canvasRef = createRef<"canvas">();
+// canvasRef.current is HTMLCanvasElement | null
+
+// After the element is created with the ref, you get full autocompletion:
+inputRef.current?.value;        // string
+inputRef.current?.focus();      // () => void
+canvasRef.current?.getContext("2d"); // CanvasRenderingContext2D | null
+```
+
+## Core Types
+
+The library exports the following types for advanced use cases:
+
+| Type | Description |
+|------|-------------|
+| `JDAllTags` | Union of all supported HTML, SVG, and MathML tag names |
+| `JDTagsMap` | Maps tag names to their corresponding element types |
+| `JDCreateElementOptions<T>` | Props object for a given tag type |
+| `JDCreateElementChildren` | Valid children types (Node array or string) |
+| `JDRef<T>` | Ref object for a given tag type |
+| `JDom` | Type of the default `DOM` export object |
+
+### JDCreateElementOptions
+
+The props type for each element combines:
+
+- All properties of the corresponding element interface (e.g., `HTMLDivElement`)
+- `style` as `Partial<CSSStyleDeclaration>` (instead of the raw `CSSStyleDeclaration`)
+- `ref` as `JDRef<T>` for element references
+- `data-*` attributes as `string | undefined`
+
+```ts
+import type { JDCreateElementOptions } from "just-dom";
+
+// Full type for div props
+type DivProps = JDCreateElementOptions<"div">;
+```
+
+### JDRef
+
+The ref type follows the same pattern as React refs:
+
+```ts
+import type { JDRef } from "just-dom";
+
+type InputRef = JDRef<"input">;
+// { current: HTMLInputElement | null }
+```

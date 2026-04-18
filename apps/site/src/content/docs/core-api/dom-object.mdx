@@ -1,0 +1,157 @@
+---
+title: DOM Object
+description: The default export — create any element with a single function call
+---
+
+The `DOM` object is the default export of Just DOM. It provides a method for every HTML, SVG, and MathML tag name, plus a `fragment` method.
+
+## Import
+
+```ts
+import DOM from "just-dom";
+```
+
+## Signature
+
+```ts
+DOM.<tagName>(props?, children?) => Element
+```
+
+Each tag method has the following signature:
+
+```ts
+DOM.div(
+  props?: JDCreateElementOptions<"div">,
+  children?: JDCreateElementChildren
+): HTMLDivElement;
+```
+
+The return type is always the specific element type for the given tag.
+
+## Parameters
+
+### props
+
+**Type:** `JDCreateElementOptions<T>` | **Optional**
+
+An object containing attributes, styles, event listeners, data attributes, and refs to apply to the element.
+
+| Property pattern | Type | Description |
+|-----------------|------|-------------|
+| Standard attributes | Various | Any property of the element interface (e.g. `className`, `id`, `href`) |
+| `style` | `Partial<CSSStyleDeclaration>` | Inline styles as an object |
+| `on*` | `Function` | Event listeners (e.g. `onclick`, `oninput`) |
+| `data-*` | `string` | Data attributes |
+| `ref` | `JDRef<T>` | Ref object to bind to this element |
+| Boolean attributes | `boolean` | `true` sets the attribute, `false` removes it |
+
+### children
+
+**Type:** `(Node | string | null | undefined)[] | string` | **Optional**
+
+The child nodes to append to the element. Can be an array of elements and strings, or a single string.
+
+## Supported Tags
+
+### HTML Tags
+
+All standard HTML tags are supported:
+
+```ts
+DOM.div()    DOM.span()    DOM.p()       DOM.a()
+DOM.h1()     DOM.h2()      DOM.h3()      DOM.h4()
+DOM.ul()     DOM.ol()      DOM.li()      DOM.table()
+DOM.form()   DOM.input()   DOM.button()  DOM.select()
+DOM.img()    DOM.video()   DOM.audio()   DOM.canvas()
+DOM.header() DOM.footer()  DOM.main()    DOM.nav()
+DOM.section() DOM.article() DOM.aside()  DOM.details()
+// ... and all other standard HTML elements
+```
+
+### SVG Tags
+
+```ts
+DOM.svg()     DOM.path()    DOM.circle()  DOM.rect()
+DOM.line()    DOM.polyline() DOM.polygon() DOM.ellipse()
+DOM.g()       DOM.text()    DOM.defs()    DOM.use()
+// ... and all other standard SVG elements
+```
+
+### MathML Tags
+
+```ts
+DOM.math()    DOM.mi()      DOM.mn()      DOM.mo()
+DOM.mrow()    DOM.msup()    DOM.msub()    DOM.mfrac()
+// ... and all other standard MathML elements
+```
+
+## Examples
+
+### Basic element
+
+```ts
+const heading = DOM.h1({ className: "title" }, "Hello, world!");
+```
+
+### Nested elements
+
+```ts
+const card = DOM.div({ className: "card" }, [
+  DOM.h2({}, "Card Title"),
+  DOM.p({}, "Card description goes here."),
+  DOM.button({ onclick: () => console.log("clicked") }, "Action"),
+]);
+```
+
+### With styles and events
+
+```ts
+const interactive = DOM.div(
+  {
+    style: {
+      padding: "16px",
+      backgroundColor: "#f5f5f5",
+      borderRadius: "8px",
+      cursor: "pointer",
+    },
+    onclick: () => console.log("Clicked!"),
+    onmouseenter: (e) => {
+      (e.target as HTMLElement).style.backgroundColor = "#e0e0e0";
+    },
+    onmouseleave: (e) => {
+      (e.target as HTMLElement).style.backgroundColor = "#f5f5f5";
+    },
+  },
+  "Hover me"
+);
+```
+
+### SVG elements
+
+```ts
+const icon = DOM.svg(
+  {
+    width: "24",
+    height: "24",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+  },
+  [
+    DOM.circle({ cx: "12", cy: "12", r: "10" }),
+    DOM.line({ x1: "12", y1: "8", x2: "12", y2: "16" }),
+    DOM.line({ x1: "8", y1: "12", x2: "16", y2: "12" }),
+  ]
+);
+```
+
+### Fragment
+
+The `DOM` object also includes a `fragment` method. See [createFragment](/docs/core-api/create-fragment) for details.
+
+```ts
+const frag = DOM.fragment([
+  DOM.p({}, "First"),
+  DOM.p({}, "Second"),
+]);
+```

@@ -1,0 +1,92 @@
+---
+title: definePlugin
+description: Define a plugin with automatic type inference
+---
+
+`definePlugin` is a helper function for creating Just DOM plugins. It provides automatic TypeScript inference for the plugin's extension type, so you don't need to annotate types manually.
+
+## Import
+
+```ts
+import { definePlugin } from "just-dom";
+```
+
+## Signature
+
+```ts
+function definePlugin<T extends Record<string, (...args: any[]) => any>>(
+  plugin: JDPlugin<T>,
+): JDPlugin<T>;
+```
+
+## Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `plugin` | `JDPlugin<T>` | An object with `name` (string) and `extend` (function returning the extension methods) |
+
+## Returns
+
+| Type | Description |
+|------|-------------|
+| `JDPlugin<T>` | The same plugin object, with `T` inferred from `extend`'s return type |
+
+## Usage
+
+```ts
+import { definePlugin } from "just-dom";
+
+const timestampPlugin = definePlugin({
+  name: "timestamp",
+  extend: () => ({
+    timestamp: (): HTMLTimeElement => {
+      const el = document.createElement("time");
+      const now = new Date();
+      el.dateTime = now.toISOString();
+      el.textContent = now.toLocaleString();
+      return el;
+    },
+  }),
+});
+```
+
+TypeScript infers the extension type as `{ timestamp: () => HTMLTimeElement }` automatically.
+
+## The JDPlugin Interface
+
+```ts
+interface JDPlugin<TExtension> {
+  name: string;
+  extend: () => TExtension;
+}
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | `string` | A unique identifier for the plugin (used in error messages) |
+| `extend` | `() => TExtension` | A function that returns an object of methods to merge onto the DOM object |
+
+## Factory Pattern
+
+For configurable plugins, wrap `definePlugin` in a factory function:
+
+```ts
+import { definePlugin } from "just-dom";
+
+export function createCounterPlugin(initial: number = 0) {
+  let count = initial;
+
+  return definePlugin({
+    name: "counter",
+    extend: () => ({
+      counter: (): HTMLSpanElement => {
+        const el = document.createElement("span");
+        el.textContent = String(count++);
+        return el;
+      },
+    }),
+  });
+}
+```
+
+See the [Create a Plugin](/docs/create-a-plugin) guide for more patterns.

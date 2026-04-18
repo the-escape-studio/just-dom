@@ -1,0 +1,32 @@
+---
+title: Installation
+description: Install Just DOM in your project
+icon: Download
+---
+
+## Package Manager
+
+Install Just DOM using your preferred package manager:
+
+```package-install
+just-dom
+```
+
+## Manual Download
+
+You can also download the library directly from the [GitHub releases](https://github.com/codingspook/just-dom/releases) page and include it in your project.
+
+## Verify Installation
+
+After installation, verify that everything works by creating a simple element:
+
+```ts
+import DOM from "just-dom";
+
+const el = DOM.div({ className: "test" }, "It works!");
+console.log(el); // HTMLDivElement
+```
+
+## Next Steps
+
+Now that you have Just DOM installed, check out the [Getting Started](/docs/getting-started) guide to learn how to use it.

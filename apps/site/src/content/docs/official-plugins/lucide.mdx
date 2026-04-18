@@ -1,0 +1,165 @@
+---
+title: just-dom-lucide
+description: Lucide SVG icons plugin for Just DOM
+---
+
+`just-dom-lucide` integrates [Lucide](https://lucide.dev) icons into Just DOM. It adds an `icon` method to the DOM object that creates fully typed SVG icon elements.
+
+## Installation
+
+```package-install
+just-dom-lucide
+```
+
+`lucide` is included as a dependency and will be installed automatically.
+
+## Quick Start
+
+```ts
+import DOM, { withPlugins } from "just-dom";
+import { createLucidePlugin } from "just-dom-lucide";
+import { House, Search, Settings } from "lucide";
+
+const $ = withPlugins(DOM, [
+  createLucidePlugin({ icons: { House, Search, Settings } }),
+]);
+
+const nav = $.nav({ className: "sidebar" }, [
+  $.icon("House", { size: 20 }),
+  $.icon("Search", { size: 20 }),
+  $.icon("Settings", { size: 20 }),
+]);
+```
+
+## API
+
+### createLucidePlugin
+
+Creates a plugin instance with a specific set of icons. Only registered icons are included in the bundle and available for autocompletion.
+
+```ts
+function createLucidePlugin<T extends Record<string, IconNode>>(config: {
+  icons: T;
+}): JDPlugin<{
+  icon: (name: keyof T & string, options?: LucideIconOptions) => SVGSVGElement;
+}>;
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `config.icons` | `Record<string, IconNode>` | An object mapping icon names to Lucide icon data |
+
+#### Returns
+
+A `JDPlugin` that adds an `icon` method to the DOM object.
+
+### icon
+
+The method added by the plugin.
+
+```ts
+$.icon(name, options?): SVGSVGElement
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `name` | `keyof T & string` | The icon name (must match one of the registered icons) |
+| `options` | `LucideIconOptions` | Optional icon configuration |
+
+### LucideIconOptions
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `size` | `number` | `24` | Width and height in pixels |
+| `color` | `string` | `"currentColor"` | Stroke color |
+| `strokeWidth` | `number` | `2` | Stroke width |
+| `absoluteStrokeWidth` | `boolean` | `false` | When `true`, stroke width doesn't scale with size |
+| `className` | `string` | — | CSS class to apply to the SVG element |
+
+## Usage
+
+### Tree-Shakeable (Recommended)
+
+Import only the icons you need. TypeScript will only allow icon names that you've registered:
+
+```ts
+import DOM, { withPlugins } from "just-dom";
+import { createLucidePlugin } from "just-dom-lucide";
+import { Heart, Star, ThumbsUp } from "lucide";
+
+const $ = withPlugins(DOM, [
+  createLucidePlugin({ icons: { Heart, Star, ThumbsUp } }),
+]);
+
+$.icon("Heart");     // OK
+$.icon("Star");      // OK
+$.icon("Missing");   // TypeScript error!
+```
+
+### All Icons (Prototyping)
+
+For quick prototyping, the `lucidePlugin` export includes all 1400+ icons with full autocompletion:
+
+```ts
+import DOM, { withPlugins } from "just-dom";
+import { lucidePlugin } from "just-dom-lucide";
+
+const $ = withPlugins(DOM, [lucidePlugin]);
+
+$.icon("Heart");
+$.icon("Rocket");
+$.icon("Zap");
+```
+
+> **Note:** This includes the entire Lucide icon set in your bundle. Use `createLucidePlugin` for production builds.
+
+### Customizing Icons
+
+```ts
+const heart = $.icon("Heart", {
+  size: 32,
+  color: "red",
+  strokeWidth: 2.5,
+  className: "icon-heart",
+});
+
+document.body.appendChild(heart);
+```
+
+### Composing with DOM Elements
+
+Icons return standard `SVGSVGElement` nodes, so they work seamlessly as children:
+
+```ts
+const button = $.button(
+  {
+    className: "btn",
+    onclick: () => console.log("liked!"),
+  },
+  [$.icon("Heart", { size: 16 }), " Like"]
+);
+```
+
+### Icon List
+
+```ts
+const icons = ["House", "User", "Settings", "Bell"] as const;
+
+const nav = $.ul(
+  { className: "nav" },
+  icons.map((name) =>
+    $.li({}, [$.icon(name, { size: 18 }), ` ${name}`])
+  ),
+);
+```
+
+## Exports
+
+| Export | Type | Description |
+|--------|------|-------------|
+| `createLucidePlugin` | `function` | Factory for tree-shakeable plugin instances |
+| `lucidePlugin` | `JDPlugin` | Pre-configured plugin with all Lucide icons |
+| `LucideIconOptions` | `type` | Options interface for the `icon` method |
+| `IconNode` | `type` | Re-exported from `lucide` for advanced use |

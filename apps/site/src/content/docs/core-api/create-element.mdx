@@ -1,0 +1,77 @@
+---
+title: createElement
+description: Create a typed DOM element from a tag name
+---
+
+`createElement` is the low-level function behind every `DOM.<tag>()` call. It creates a DOM element, applies attributes, binds refs, and appends children. It is also useful for plugin authors who need to create elements programmatically.
+
+## Import
+
+```ts
+import { createElement } from "just-dom";
+```
+
+## Signature
+
+```ts
+function createElement<T extends JDAllTags>(
+  tagName: T,
+  options: JDCreateElementOptions<T>,
+  children?: JDCreateElementChildren,
+): JDTagsMap[T];
+```
+
+## Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `tagName` | `T extends JDAllTags` | Any HTML, SVG, or MathML tag name |
+| `options` | `JDCreateElementOptions<T>` | Attributes, styles, events, data attributes, and ref |
+| `children` | `JDCreateElementChildren` | Optional children (array of nodes/strings, or a single string) |
+
+## Returns
+
+| Type | Description |
+|------|-------------|
+| `JDTagsMap[T]` | The created element, typed to the specific tag (e.g. `HTMLDivElement` for `"div"`) |
+
+## Usage
+
+```ts
+import { createElement } from "just-dom";
+
+const div = createElement("div", { className: "card" }, [
+  createElement("h2", {}, ["Title"]),
+  createElement("p", {}, ["Content"]),
+]);
+```
+
+This is equivalent to:
+
+```ts
+import DOM from "just-dom";
+
+const div = DOM.div({ className: "card" }, [
+  DOM.h2({}, "Title"),
+  DOM.p({}, "Content"),
+]);
+```
+
+## For Plugin Authors
+
+`createElement` is useful when building plugins that need to compose standard DOM elements:
+
+```ts
+import { definePlugin, createElement } from "just-dom";
+
+export const alertPlugin = definePlugin({
+  name: "alert",
+  extend: () => ({
+    alert: (message: string, type: "info" | "error" = "info") => {
+      return createElement("div", { className: `alert alert-${type}` }, [
+        createElement("span", {}, [message]),
+      ]);
+    },
+  }),
+});
+```

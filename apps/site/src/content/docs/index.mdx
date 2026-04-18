@@ -1,0 +1,43 @@
+---
+title: Introduction
+description: A lightweight JavaScript library for intuitive DOM manipulation
+icon: BookOpen
+---
+
+Just DOM is a lightweight JavaScript library that simplifies DOM manipulation, providing an intuitive and functional interface for building pure web applications — **no virtual DOM, no build step required**.
+
+## Why Just DOM?
+
+Modern frameworks add complexity that isn't always needed. Just DOM gives you a clean, declarative API to work directly with the real DOM while keeping your code organized and type-safe.
+
+```ts
+import DOM, { createRoot } from "just-dom";
+
+const app = DOM.div({ className: "app" }, [
+  DOM.h1({}, "Hello, Just DOM!"),
+  DOM.p({}, "Building UIs without the overhead."),
+]);
+
+createRoot("app", app);
+```
+
+## Features
+
+- **Simplified DOM element creation** — create any HTML, SVG, or MathML element with a single function call
+- **Unified interface** — attributes, styles, events, and data attributes through a single options object
+- **Support for all standard tags** — HTML, SVG, and MathML elements out of the box
+- **Ref system** — React-like refs to keep references to your elements
+- **Fragment support** — group elements without adding extra nodes to the DOM
+- **Plugin system** — extend the DOM object with installable plugins and full type safety
+- **Full TypeScript support** — complete type declarations with zero additional packages
+- **No external dependencies** — zero runtime dependencies
+- **Small bundle size** — less than 20KB
+
+## Quick Start
+
+<Cards>
+  <Card title="Installation" href="/docs/installation" />
+  <Card title="Getting Started" href="/docs/getting-started" />
+  <Card title="TypeScript" href="/docs/typescript" />
+  <Card title="Create a Plugin" href="/docs/create-a-plugin" />
+</Cards>

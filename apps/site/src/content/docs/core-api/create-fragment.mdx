@@ -1,0 +1,81 @@
+---
+title: createFragment
+description: Create a DocumentFragment to group elements
+---
+
+`createFragment` creates a `DocumentFragment` — a lightweight container for grouping DOM nodes without adding an extra parent element to the document tree. It is also available as `DOM.fragment()`.
+
+## Import
+
+```ts
+// As a standalone function (internal)
+import DOM from "just-dom";
+
+// Use via the DOM object
+DOM.fragment(children);
+```
+
+## Signature
+
+```ts
+function createFragment(children?: JDCreateElementChildren): DocumentFragment;
+```
+
+## Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `children` | `JDCreateElementChildren` | `[]` | Array of nodes and strings to include in the fragment |
+
+## Returns
+
+| Type | Description |
+|------|-------------|
+| `DocumentFragment` | A fragment containing the provided children |
+
+## Usage
+
+```ts
+import DOM from "just-dom";
+
+const fragment = DOM.fragment([
+  DOM.h2({}, "Section Title"),
+  DOM.p({}, "First paragraph."),
+  DOM.p({}, "Second paragraph."),
+]);
+
+document.body.appendChild(fragment);
+// Appends h2, p, p directly to body — no wrapper element
+```
+
+## Examples
+
+### Inserting multiple elements at once
+
+```ts
+import DOM from "just-dom";
+
+const items = ["Apple", "Banana", "Cherry"];
+
+const listItems = DOM.fragment(
+  items.map((item) => DOM.li({}, item))
+);
+
+const ul = DOM.ul({ className: "fruit-list" });
+ul.appendChild(listItems);
+```
+
+### Conditional rendering
+
+```ts
+import DOM from "just-dom";
+
+function renderUser(user: { name: string; isAdmin: boolean }) {
+  return DOM.fragment([
+    DOM.span({}, user.name),
+    user.isAdmin
+      ? DOM.span({ className: "badge" }, "Admin")
+      : null,
+  ]);
+}
+```

@@ -1,0 +1,98 @@
+---
+title: createRoot
+description: Mount an element tree into a container
+---
+
+`createRoot` mounts a DOM element into a container element, either by its ID or by a direct element reference. This is the entry point for rendering your application.
+
+## Import
+
+```ts
+import { createRoot } from "just-dom";
+```
+
+## Signature
+
+```ts
+function createRoot(root: string | HTMLElement, rootEl: HTMLElement): void;
+```
+
+## Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `root` | `string \| HTMLElement` | The container — either an element ID string or an `HTMLElement` reference |
+| `rootEl` | `HTMLElement` | The element to mount inside the container |
+
+## Returns
+
+`void`
+
+## Errors
+
+Throws an `Error` if the container element cannot be found:
+
+- If `root` is a string and no element with that ID exists
+- If `root` is an `HTMLElement` reference that is `null`
+
+## Usage
+
+### Mount by ID
+
+Given this HTML:
+
+```html
+<div id="app"></div>
+```
+
+```ts
+import DOM, { createRoot } from "just-dom";
+
+const app = DOM.div({}, [
+  DOM.h1({}, "My App"),
+  DOM.p({}, "Mounted by ID"),
+]);
+
+createRoot("app", app);
+```
+
+### Mount by element reference
+
+```ts
+import DOM, { createRoot } from "just-dom";
+
+const container = document.querySelector(".root");
+
+const app = DOM.div({}, [
+  DOM.h1({}, "My App"),
+  DOM.p({}, "Mounted by reference"),
+]);
+
+createRoot(container, app);
+```
+
+## Example
+
+### SPA entry point
+
+```ts title="main.ts"
+import DOM, { createRoot } from "just-dom";
+
+const app = DOM.div({ className: "app" }, [
+  DOM.header({ className: "header" }, [
+    DOM.nav({}, [
+      DOM.a({ href: "/" }, "Home"),
+      DOM.a({ href: "/about" }, "About"),
+    ]),
+  ]),
+  DOM.main({ className: "content" }, [
+    DOM.h1({}, "Welcome"),
+    DOM.p({}, "This is a single-page app built with Just DOM."),
+  ]),
+  DOM.footer({}, [
+    DOM.p({}, "© 2025 My App"),
+  ]),
+]);
+
+createRoot("app", app);
+```

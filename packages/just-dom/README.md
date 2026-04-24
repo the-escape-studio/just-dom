@@ -16,8 +16,8 @@ npm install just-dom
 ```ts
 import DOM, { createRoot } from "just-dom";
 
-const $ = createRoot(DOM, document.getElementById("app")!);
-$.div({ class: "greeting" }, "Hello");
+const jd = createRoot(DOM, document.getElementById("app")!);
+jd.div({ class: "greeting" }, "Hello");
 ```
 
 ## Plugins

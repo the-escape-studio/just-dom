@@ -41,10 +41,10 @@ function withPlugins<const P extends readonly JDPlugin<any>[]>(
 import DOM, { withPlugins } from "just-dom";
 import { lucidePlugin } from "@just-dom/lucide";
 
-const $ = withPlugins(DOM, [lucidePlugin]);
+const jd = withPlugins(DOM, [lucidePlugin]);
 
-$.div({ className: "app" });           // built-in
-$.icon("Heart", { size: 24 });         // from plugin
+jd.div({ className: "app" });           // built-in
+jd.icon("Heart", { size: 24 });         // from plugin
 ```
 
 ### Multiple plugins
@@ -54,7 +54,7 @@ import DOM, { withPlugins } from "just-dom";
 import { pluginA } from "just-dom-a";
 import { pluginB } from "just-dom-b";
 
-const $ = withPlugins(DOM, [pluginA, pluginB]);
+const jd = withPlugins(DOM, [pluginA, pluginB]);
 ```
 
 TypeScript merges all extension types into a single intersection, so every method from every plugin is typed correctly.

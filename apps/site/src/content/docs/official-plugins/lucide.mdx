@@ -20,14 +20,14 @@ import DOM, { withPlugins } from "just-dom";
 import { createLucidePlugin } from "@just-dom/lucide";
 import { House, Search, Settings } from "lucide";
 
-const $ = withPlugins(DOM, [
+const jd = withPlugins(DOM, [
   createLucidePlugin({ icons: { House, Search, Settings } }),
 ]);
 
-const nav = $.nav({ className: "sidebar" }, [
-  $.icon("House", { size: 20 }),
-  $.icon("Search", { size: 20 }),
-  $.icon("Settings", { size: 20 }),
+const nav = jd.nav({ className: "sidebar" }, [
+  jd.icon("House", { size: 20 }),
+  jd.icon("Search", { size: 20 }),
+  jd.icon("Settings", { size: 20 }),
 ]);
 ```
 
@@ -60,7 +60,7 @@ A `JDPlugin` that adds an `icon` method to the DOM object.
 The method added by the plugin.
 
 ```ts
-$.icon(name, options?): SVGSVGElement
+jd.icon(name, options?): SVGSVGElement
 ```
 
 | Parameter | Type | Description |
@@ -89,13 +89,13 @@ import DOM, { withPlugins } from "just-dom";
 import { createLucidePlugin } from "@just-dom/lucide";
 import { Heart, Star, ThumbsUp } from "lucide";
 
-const $ = withPlugins(DOM, [
+const jd = withPlugins(DOM, [
   createLucidePlugin({ icons: { Heart, Star, ThumbsUp } }),
 ]);
 
-$.icon("Heart");     // OK
-$.icon("Star");      // OK
-$.icon("Missing");   // TypeScript error!
+jd.icon("Heart");     // OK
+jd.icon("Star");      // OK
+jd.icon("Missing");   // TypeScript error!
 ```
 
 ### All Icons (Prototyping)
@@ -106,11 +106,11 @@ For quick prototyping, the `lucidePlugin` export includes all 1400+ icons with f
 import DOM, { withPlugins } from "just-dom";
 import { lucidePlugin } from "@just-dom/lucide";
 
-const $ = withPlugins(DOM, [lucidePlugin]);
+const jd = withPlugins(DOM, [lucidePlugin]);
 
-$.icon("Heart");
-$.icon("Rocket");
-$.icon("Zap");
+jd.icon("Heart");
+jd.icon("Rocket");
+jd.icon("Zap");
 ```
 
 > **Note:** This includes the entire Lucide icon set in your bundle. Use `createLucidePlugin` for production builds.
@@ -118,7 +118,7 @@ $.icon("Zap");
 ### Customizing Icons
 
 ```ts
-const heart = $.icon("Heart", {
+const heart = jd.icon("Heart", {
   size: 32,
   color: "red",
   strokeWidth: 2.5,
@@ -133,12 +133,12 @@ document.body.appendChild(heart);
 Icons return standard `SVGSVGElement` nodes, so they work seamlessly as children:
 
 ```ts
-const button = $.button(
+const button = jd.button(
   {
     className: "btn",
     onclick: () => console.log("liked!"),
   },
-  [$.icon("Heart", { size: 16 }), " Like"]
+  [jd.icon("Heart", { size: 16 }), " Like"]
 );
 ```
 
@@ -147,10 +147,10 @@ const button = $.button(
 ```ts
 const icons = ["House", "User", "Settings", "Bell"] as const;
 
-const nav = $.ul(
+const nav = jd.ul(
   { className: "nav" },
   icons.map((name) =>
-    $.li({}, [$.icon(name, { size: 18 }), ` ${name}`])
+    jd.li({}, [jd.icon(name, { size: 18 }), ` ${name}`])
   ),
 );
 ```

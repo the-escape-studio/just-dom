@@ -245,21 +245,21 @@ createRoot(mount, app);`,
     label: "Lucide (official plugin)",
     value: "lucide",
     code: `const lucide = createLucidePlugin({ icons: LUCIDE });
-const $ = withPlugins(DOM, [lucide]);
+const jd = withPlugins(DOM, [lucide]);
 
-const app = $.div(
+const app = jd.div(
   { style: { padding: "24px", fontFamily: "system-ui, sans-serif" } },
   [
-    $.h2({}, ["@just-dom/lucide"]),
-    $.p({ style: { marginTop: "8px", color: "#6b7280" } }, [
+    jd.h2({}, ["@just-dom/lucide"]),
+    jd.p({ style: { marginTop: "8px", color: "#6b7280" } }, [
       "Icons: House, Search, Star, … (playground ships a small preset; see LUCIDE)",
     ]),
-    $.div(
+    jd.div(
       { style: { display: "flex", gap: "12px", marginTop: "16px", alignItems: "center" } },
       [
-        $.icon("House", { size: 28, color: "#3b82f6" }),
-        $.icon("Search", { size: 28, color: "#22c55e" }),
-        $.icon("Star", { size: 28, color: "#f59e0b" }),
+        jd.icon("House", { size: 28, color: "#3b82f6" }),
+        jd.icon("Search", { size: 28, color: "#22c55e" }),
+        jd.icon("Star", { size: 28, color: "#f59e0b" }),
       ],
     ),
   ],
@@ -289,19 +289,19 @@ createRoot(mount, app);`,
   }),
 });
 
-const $ = withPlugins(DOM, [badgePlugin]);
+const jd = withPlugins(DOM, [badgePlugin]);
 
-const app = $.div(
+const app = jd.div(
   { style: { padding: "24px", fontFamily: "system-ui, sans-serif" } },
   [
-    $.h2({}, ["Plugin System"]),
-    $.p({ style: { marginTop: "12px" } }, [
+    jd.h2({}, ["Plugin System"]),
+    jd.p({ style: { marginTop: "12px" } }, [
       "Status: ",
-      $.badge("Active", "#22c55e"),
+      jd.badge("Active", "#22c55e"),
       " ",
-      $.badge("New"),
+      jd.badge("New"),
       " ",
-      $.badge("Beta", "#f59e0b"),
+      jd.badge("Beta", "#f59e0b"),
     ]),
   ]
 );

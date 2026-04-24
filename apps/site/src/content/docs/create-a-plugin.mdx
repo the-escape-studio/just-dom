@@ -28,9 +28,9 @@ That's it. Consumers can now use it:
 import DOM, { withPlugins } from "just-dom";
 import { greetPlugin } from "./greet-plugin";
 
-const $ = withPlugins(DOM, [greetPlugin]);
+const jd = withPlugins(DOM, [greetPlugin]);
 
-const el = $.greeting("World");
+const el = jd.greeting("World");
 // el is HTMLDivElement, fully typed
 ```
 
@@ -137,11 +137,11 @@ Usage:
 import DOM, { withPlugins } from "just-dom";
 import { createToastPlugin } from "./toast-plugin";
 
-const $ = withPlugins(DOM, [
+const jd = withPlugins(DOM, [
   createToastPlugin({ duration: 5000, position: "top" }),
 ]);
 
-$.toast("Saved successfully!");
+jd.toast("Saved successfully!");
 ```
 
 ## Publishing a Plugin

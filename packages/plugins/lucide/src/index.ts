@@ -45,7 +45,7 @@ function toSvgAttrs(
  *
  * @example
  * ```ts
- * import { createLucidePlugin } from "just-dom-lucide";
+ * import { createLucidePlugin } from "@just-dom/lucide";
  * import { House, Search } from "lucide";
  *
  * const lucide = createLucidePlugin({ icons: { House, Search } });
@@ -69,7 +69,7 @@ export function createLucidePlugin<T extends Record<string, IconNode>>(config: {
         const iconNode = config.icons[name];
         if (!iconNode) {
           throw new Error(
-            `[just-dom-lucide] Icon "${name}" not found. ` +
+            `[@just-dom/lucide] Icon "${name}" not found. ` +
               `Make sure it's registered in createLucidePlugin({ icons: { ... } })`,
           );
         }

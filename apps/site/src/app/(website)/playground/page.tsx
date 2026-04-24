@@ -1,4 +1,4 @@
-import PlaygroundView from "@/views/PlaygroundView";
+import PlaygroundView from "@/views/playground";
 
 export default function PlaygroundPage() {
   return <PlaygroundView />;

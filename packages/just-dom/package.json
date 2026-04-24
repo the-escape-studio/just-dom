@@ -1,7 +1,19 @@
 {
   "name": "just-dom",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "A lightweight library for DOM manipulation",
+  "homepage": "https://just-dom.vercel.app/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/the-escape-studio/just-dom.git",
+    "directory": "packages/just-dom"
+  },
+  "bugs": {
+    "url": "https://github.com/the-escape-studio/just-dom/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "commonjs",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -19,14 +31,14 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "scripts": {
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
     "build": "tsup src/index.ts --format cjs,esm --dts"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.31.0",
     "@types/jest": "^30.0.0",
     "jest": "^30.3.0",
     "jest-environment-jsdom": "^30.3.0",

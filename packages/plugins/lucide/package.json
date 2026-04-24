@@ -1,7 +1,19 @@
 {
-  "name": "just-dom-lucide",
+  "name": "@just-dom/lucide",
   "version": "1.0.0",
   "description": "Lucide icons plugin for just-dom",
+  "homepage": "https://just-dom.vercel.app/docs/official-plugins/lucide",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/the-escape-studio/just-dom.git",
+    "directory": "packages/plugins/lucide"
+  },
+  "bugs": {
+    "url": "https://github.com/the-escape-studio/just-dom/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "commonjs",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -19,7 +31,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "scripts": {
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch",

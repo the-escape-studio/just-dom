@@ -1,21 +1,33 @@
-# shadcn/ui monorepo template
+# just-dom
 
-This is a Next.js monorepo template with shadcn/ui.
+Monorepo for **just-dom** and official plugins. Documentation, guides, and the playground live in the **site** app.
 
-## Adding components
+- **Docs:** [just-dom.vercel.app](https://just-dom.vercel.app)
+- **Repository:** [github.com/the-escape-studio/just-dom](https://github.com/the-escape-studio/just-dom)
 
-To add components to your app, run the following command at the root of your `site` app:
+## Workspace layout
+
+| Path | Description |
+|------|-------------|
+| `packages/just-dom` | Core library (`just-dom` on npm) |
+| `packages/plugins` | Official [`@just-dom/*` packages](packages/plugins/README.md) (one folder per plugin) |
+| `apps/site` | Documentation site and playground (Fumadocs + Next.js) |
+| `packages/ui` | Internal UI for the site |
+| `packages/eslint-config` / `packages/typescript-config` | Shared workspace tooling |
+
+## Development
 
 ```bash
-pnpm dlx shadcn@latest add button -c apps/site
+pnpm install
+pnpm dev
 ```
 
-This will place the ui components in the `packages/ui/src/components` directory.
+Releases and versioning use [Changesets](https://github.com/changesets/changesets) (`pnpm changeset` from the root).
 
-## Using components
+- **`pnpm release`** (used by the release workflow before `changeset publish`) builds the publishable packages, then **regenerates** [playground types](apps/site/README.md#playground-types) from `just-dom`’s `dist`, so the committed file matches the API about to ship.
+- If you only change the core API, sync the playground by hand: `pnpm run sync:playground-types` (or rely on the check below).
+- **PRs** run `pnpm run check:playground-types` — the job fails if `playground-globals.generated.ts` is out of date; commit the regenerated file or run the sync command.
 
-To use the components in your app, import them from the `ui` package.
+## License
 
-```tsx
-import { Button } from "@workspace/ui/components/button";
-```
+See each package for license (if any).

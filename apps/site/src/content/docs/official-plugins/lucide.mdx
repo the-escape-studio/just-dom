@@ -1,14 +1,14 @@
 ---
-title: just-dom-lucide
+title: "@just-dom/lucide"
 description: Lucide SVG icons plugin for Just DOM
 ---
 
-`just-dom-lucide` integrates [Lucide](https://lucide.dev) icons into Just DOM. It adds an `icon` method to the DOM object that creates fully typed SVG icon elements.
+`@just-dom/lucide` integrates [Lucide](https://lucide.dev) icons into Just DOM. It adds an `icon` method to the DOM object that creates fully typed SVG icon elements.
 
 ## Installation
 
 ```package-install
-just-dom-lucide
+@just-dom/lucide
 ```
 
 `lucide` is included as a dependency and will be installed automatically.
@@ -17,7 +17,7 @@ just-dom-lucide
 
 ```ts
 import DOM, { withPlugins } from "just-dom";
-import { createLucidePlugin } from "just-dom-lucide";
+import { createLucidePlugin } from "@just-dom/lucide";
 import { House, Search, Settings } from "lucide";
 
 const $ = withPlugins(DOM, [
@@ -86,7 +86,7 @@ Import only the icons you need. TypeScript will only allow icon names that you'v
 
 ```ts
 import DOM, { withPlugins } from "just-dom";
-import { createLucidePlugin } from "just-dom-lucide";
+import { createLucidePlugin } from "@just-dom/lucide";
 import { Heart, Star, ThumbsUp } from "lucide";
 
 const $ = withPlugins(DOM, [
@@ -104,7 +104,7 @@ For quick prototyping, the `lucidePlugin` export includes all 1400+ icons with f
 
 ```ts
 import DOM, { withPlugins } from "just-dom";
-import { lucidePlugin } from "just-dom-lucide";
+import { lucidePlugin } from "@just-dom/lucide";
 
 const $ = withPlugins(DOM, [lucidePlugin]);
 

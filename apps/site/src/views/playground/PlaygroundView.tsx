@@ -7,6 +7,10 @@ import DOM, {
   definePlugin,
   withPlugins,
 } from "just-dom";
+import { createLucidePlugin } from "@just-dom/lucide";
+import { House, Heart, Loader, Menu, Search, Star } from "lucide";
+import { PLAYGROUND_LUCIDE_TYPES } from "./playground-lucide-ambient";
+import { PLAYGROUND_TYPES } from "./playground-globals.generated";
 import { copyToClipboard } from "@/lib/utils";
 import { cn } from "@workspace/ui/lib/utils";
 import { Button } from "@workspace/ui/components/button";
@@ -27,121 +31,8 @@ import { useEffect, useRef, useState } from "react";
 type PlaygroundLog = { kind: "log" | "warn" | "error"; message: string };
 type MonacoInstance = Parameters<OnMount>[1];
 
-const PLAYGROUND_TYPES = `
-type JDAllTags = keyof HTMLElementTagNameMap | keyof SVGElementTagNameMap | keyof MathMLElementTagNameMap;
-type JDTagsMap = HTMLElementTagNameMap & SVGElementTagNameMap & MathMLElementTagNameMap;
-type JDRef<T extends JDAllTags> = { current: JDTagsMap[T] | null };
-type JDCreateElementChildren = (Node | string | null | undefined)[] | string;
-type JDCoerceElementProp<V> = V extends (...args: never) => unknown
-  ? V
-  : V extends SVGAnimatedBoolean
-    ? boolean | string
-    : V extends
-        | SVGAnimatedAngle
-        | SVGAnimatedEnumeration
-        | SVGAnimatedInteger
-        | SVGAnimatedLength
-        | SVGAnimatedLengthList
-        | SVGAnimatedNumber
-        | SVGAnimatedNumberList
-        | SVGAnimatedPoints
-        | SVGAnimatedPreserveAspectRatio
-        | SVGAnimatedRect
-        | SVGAnimatedString
-        | SVGAnimatedTransformList
-    ? string | number
-    : V;
-type JDElementOptionsShape<T extends JDAllTags> = {
-  -readonly [K in keyof JDTagsMap[T]]?: JDCoerceElementProp<JDTagsMap[T][K]>;
-};
-type JDSvgPresentationAttributes = {
-  fill?: string;
-  stroke?: string;
-  color?: string;
-  opacity?: string | number;
-  "fill-opacity"?: string | number;
-  fillOpacity?: string | number;
-  "fill-rule"?: string;
-  fillRule?: string;
-  "stroke-opacity"?: string | number;
-  strokeOpacity?: string | number;
-  "stroke-width"?: string | number;
-  strokeWidth?: string | number;
-  "stroke-linecap"?: string;
-  strokeLinecap?: string;
-  "stroke-linejoin"?: string;
-  strokeLinejoin?: string;
-  "stroke-miterlimit"?: string | number;
-  strokeMiterlimit?: string | number;
-  "stroke-dasharray"?: string;
-  strokeDasharray?: string;
-  "stroke-dashoffset"?: string | number;
-  strokeDashoffset?: string | number;
-  "vector-effect"?: string;
-  vectorEffect?: string;
-  "text-anchor"?: string;
-  textAnchor?: string;
-  "text-decoration"?: string;
-  textDecoration?: string;
-  "font-family"?: string;
-  fontFamily?: string;
-  "font-size"?: string | number;
-  fontSize?: string | number;
-  "font-weight"?: string | number;
-  fontWeight?: string | number;
-  "font-style"?: string;
-  fontStyle?: string;
-  "letter-spacing"?: string | number;
-  letterSpacing?: string | number;
-  "word-spacing"?: string | number;
-  wordSpacing?: string | number;
-  "dominant-baseline"?: string;
-  dominantBaseline?: string;
-  "alignment-baseline"?: string;
-  alignmentBaseline?: string;
-  transform?: string;
-  "clip-path"?: string;
-  clipPath?: string;
-  mask?: string;
-  filter?: string;
-  display?: string;
-  visibility?: string;
-};
-type JDSvgOptionsAugment<T extends JDAllTags> = T extends keyof SVGElementTagNameMap
-  ? JDSvgPresentationAttributes
-  : {};
-type JDCreateElementOptions<T extends JDAllTags> = Omit<JDElementOptionsShape<T>, "style"> &
-  JDSvgOptionsAugment<T> & {
-    style?: Partial<CSSStyleDeclaration>;
-    ref?: JDRef<T>;
-    [key: \`data-\${string}\`]: string | undefined;
-    [key: \`data\${string}\`]: string | undefined;
-  };
-type JDom = {
-  [K in JDAllTags]: (
-    props?: JDCreateElementOptions<K>,
-    children?: (HTMLElement | SVGElement | MathMLElement | string | Node)[]
-  ) => JDTagsMap[K];
-} & {
-  fragment: (children?: JDCreateElementChildren) => DocumentFragment;
-};
-interface JDPlugin<TExtension extends Record<string, (...args: any[]) => any> = Record<string, (...args: any[]) => any>> {
-  name: string;
-  extend: () => TExtension;
-}
-type ExtractPluginExtension<P> = P extends JDPlugin<infer T> ? T : never;
-type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (k: infer I) => void ? I : never;
-type MergePluginExtensions<P extends readonly JDPlugin<any>[]> = UnionToIntersection<ExtractPluginExtension<P[number]>>;
-
-declare const DOM: JDom;
-declare function createRoot(root: string | HTMLElement, rootEl: HTMLElement): void;
-declare function createRef<T extends JDAllTags>(): JDRef<T>;
-declare function createElement<T extends JDAllTags>(tagName: T, options: JDCreateElementOptions<T>, children?: JDCreateElementChildren): JDTagsMap[T];
-declare function createElFromHTMLString(htmlString: string): DocumentFragment;
-declare function definePlugin<T extends Record<string, (...args: any[]) => any>>(plugin: JDPlugin<T>): JDPlugin<T>;
-declare function withPlugins<P extends readonly JDPlugin<any>[]>(dom: JDom, plugins: P): JDom & MergePluginExtensions<P>;
-declare const mount: HTMLDivElement;
-`;
+/** Subset of lucide icons available in the playground (matches PLAYGROUND_LUCIDE_TYPES + execute() bindings). */
+const PLAYGROUND_LUCIDE_ICONS = { House, Search, Heart, Star, Menu, Loader } as const;
 
 const PRESETS: { label: string; value: string; code: string }[] = [
   {
@@ -351,6 +242,32 @@ const app = DOM.div(
 createRoot(mount, app);`,
   },
   {
+    label: "Lucide (official plugin)",
+    value: "lucide",
+    code: `const lucide = createLucidePlugin({ icons: LUCIDE });
+const $ = withPlugins(DOM, [lucide]);
+
+const app = $.div(
+  { style: { padding: "24px", fontFamily: "system-ui, sans-serif" } },
+  [
+    $.h2({}, ["@just-dom/lucide"]),
+    $.p({ style: { marginTop: "8px", color: "#6b7280" } }, [
+      "Icons: House, Search, Star, … (playground ships a small preset; see LUCIDE)",
+    ]),
+    $.div(
+      { style: { display: "flex", gap: "12px", marginTop: "16px", alignItems: "center" } },
+      [
+        $.icon("House", { size: 28, color: "#3b82f6" }),
+        $.icon("Search", { size: 28, color: "#22c55e" }),
+        $.icon("Star", { size: 28, color: "#f59e0b" }),
+      ],
+    ),
+  ],
+);
+
+createRoot(mount, app);`,
+  },
+  {
     label: "Plugin",
     value: "plugin",
     code: `const badgePlugin = definePlugin({
@@ -510,6 +427,8 @@ const PlaygroundView = () => {
         "createElFromHTMLString",
         "definePlugin",
         "withPlugins",
+        "createLucidePlugin",
+        "LUCIDE",
         "mount",
         "console",
         js,
@@ -544,6 +463,8 @@ const PlaygroundView = () => {
         createElFromHTMLString,
         definePlugin,
         withPlugins,
+        createLucidePlugin,
+        PLAYGROUND_LUCIDE_ICONS,
         mountEl,
         scopedConsole,
       );
@@ -701,6 +622,10 @@ const PlaygroundView = () => {
               m.languages.typescript.typescriptDefaults.addExtraLib(
                 PLAYGROUND_TYPES,
                 "playground-globals.d.ts",
+              );
+              m.languages.typescript.typescriptDefaults.addExtraLib(
+                PLAYGROUND_LUCIDE_TYPES,
+                "playground-lucide.d.ts",
               );
             }}
             onMount={handleEditorMount}

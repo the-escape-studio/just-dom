@@ -101,7 +101,7 @@ export const cardPlugin = definePlugin({
 
 ## Generic Plugins (Factory Pattern)
 
-For plugins that need configuration, use a factory function. This is how `just-dom-lucide` works — the factory accepts a config object and returns a plugin with types derived from that config.
+For plugins that need configuration, use a factory function. This is how `@just-dom/lucide` works — the factory accepts a config object and returns a plugin with types derived from that config.
 
 ```ts
 import { definePlugin } from "just-dom";
@@ -151,7 +151,7 @@ When publishing a plugin as an npm package:
 1. List `just-dom` as a **peer dependency**, not a regular dependency
 2. Build with both CJS and ESM formats (tsup makes this easy)
 3. Include TypeScript declarations (`.d.ts` / `.d.mts`)
-4. Use `just-dom-` as a naming convention (e.g. `just-dom-toast`, `just-dom-lucide`)
+4. Use the `@just-dom/` scope for official plugins (e.g. `@just-dom/toast`, `@just-dom/lucide`)
 
 Example `package.json`:
 

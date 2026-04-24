@@ -1,0 +1,112 @@
+# Single workflow file: npm Trusted Publisher allows only one workflow name per link.
+# Stable releases (main) + dev prereleases (dev) in one file.
+
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref == 'refs/heads/dev' }}
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  release-stable:
+    name: Publish stable (main)
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: pnpm
+
+      - name: Install latest npm
+        run: npm install --global npm@latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create release PR or publish
+        uses: changesets/action@v1
+        with:
+          version: pnpm version-packages
+          publish: pnpm release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
+
+  release-dev:
+    name: Publish dev (prerelease)
+    if: github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: pnpm
+
+      - name: Install latest npm
+        run: npm install --global npm@latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Set dev package versions
+        run: |
+          SHORT_SHA="${GITHUB_SHA::7}"
+          export DEV_SUFFIX="dev.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}.${SHORT_SHA}"
+
+          node <<'NODE'
+          const fs = require("node:fs");
+          const path = require("node:path");
+
+          const suffix = process.env.DEV_SUFFIX;
+          const packages = [
+            "packages/just-dom/package.json",
+            "packages/plugins/lucide/package.json",
+          ];
+
+          for (const packagePath of packages) {
+            const absolutePath = path.resolve(packagePath);
+            const pkg = JSON.parse(fs.readFileSync(absolutePath, "utf8"));
+            const baseVersion = pkg.version.split("-")[0];
+            pkg.version = `${baseVersion}-${suffix}`;
+            fs.writeFileSync(absolutePath, `${JSON.stringify(pkg, null, 2)}\n`);
+          }
+          NODE
+
+      - name: Build packages
+        run: pnpm exec turbo build --filter=just-dom --filter=@just-dom/lucide
+
+      - name: Publish just-dom with dev tag
+        run: npm publish packages/just-dom --tag dev --access public --provenance
+
+      - name: Publish @just-dom/lucide with dev tag
+        run: npm publish packages/plugins/lucide --tag dev --access public --provenance

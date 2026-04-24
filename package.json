@@ -10,9 +10,12 @@
     "typecheck": "turbo typecheck",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "pnpm --filter just-dom build && changeset publish"
+    "sync:playground-types": "turbo build --filter=just-dom && pnpm --filter site run generate:playground-types",
+    "check:playground-types": "pnpm run sync:playground-types && git diff --exit-code -- apps/site/src/views/playground/playground-globals.generated.ts",
+    "release": "turbo build --filter=just-dom --filter=@just-dom/lucide && pnpm --filter site run generate:playground-types && changeset publish"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.31.0",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "prettier": "^3.8.3",

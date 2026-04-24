@@ -111,8 +111,12 @@ jobs:
       - name: Build packages
         run: pnpm exec turbo build --filter=just-dom --filter=@just-dom/lucide
 
+      # Publish from inside each package dir — `npm publish packages/just-dom` makes npm treat
+      # the path as owner/repo for provenance/git (wrong: github.com/packages/just-dom).
       - name: Publish just-dom with dev tag
-        run: npm publish packages/just-dom --tag dev --access public --provenance
+        working-directory: packages/just-dom
+        run: npm publish --tag dev --access public --provenance
 
       - name: Publish @just-dom/lucide with dev tag
-        run: npm publish packages/plugins/lucide --tag dev --access public --provenance
+        working-directory: packages/plugins/lucide
+        run: npm publish --tag dev --access public --provenance

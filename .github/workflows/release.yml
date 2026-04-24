@@ -39,8 +39,11 @@ jobs:
           registry-url: https://registry.npmjs.org
           cache: pnpm
 
-      - name: Install latest npm
-        run: npm install --global npm@latest
+      - name: Use npm 11+ (OIDC / trusted publishing)
+        run: |
+          corepack enable
+          corepack prepare npm@11.5.1 --activate
+          npm --version
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -72,8 +75,11 @@ jobs:
           registry-url: https://registry.npmjs.org
           cache: pnpm
 
-      - name: Install latest npm
-        run: npm install --global npm@latest
+      - name: Use npm 11+ (OIDC / trusted publishing)
+        run: |
+          corepack enable
+          corepack prepare npm@11.5.1 --activate
+          npm --version
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

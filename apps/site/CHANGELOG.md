@@ -1,5 +1,11 @@
 # site
 
+## 2.0.1
+
+### Patch Changes
+
+- Align workspace dependency story with corrected npm semver (`just-dom@2.x`, `@just-dom/lucide@1.x`, `@just-dom/router@1.0.0`).
+
 ## 2.0.0
 
 ### Major Changes

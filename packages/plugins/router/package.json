@@ -1,6 +1,6 @@
 {
   "name": "@just-dom/router",
-  "version": "2.0.0",
+  "version": "1.0.0",
   "description": "Client-side router plugin for just-dom",
   "homepage": "https://just-dom.vercel.app/docs/official-plugins/router",
   "repository": {
@@ -40,7 +40,7 @@
     "test": "jest"
   },
   "peerDependencies": {
-    "just-dom": ">=3.0.0"
+    "just-dom": ">=2.0.0"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",

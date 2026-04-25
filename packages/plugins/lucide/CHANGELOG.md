@@ -1,12 +1,7 @@
 # @just-dom/lucide
 
-## 2.0.0
-
-### Minor Changes
-
-- f79027a: JUST-DOM v2 is here. rebuilded from 0 to be simple, modular and typescript ready.
+## 1.0.2
 
 ### Patch Changes
 
-- Updated dependencies [f79027a]
-  - just-dom@3.0.0
+- Correct mistaken `2.0.0` tag (package unchanged vs `1.0.1`). Peer range aligned back to `just-dom@2.x`. Deprecate `@just-dom/lucide@2.0.0` on npm if it remains after this release.

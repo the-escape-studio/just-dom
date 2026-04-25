@@ -1,6 +1,6 @@
 {
   "name": "create-just-dom",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Scaffold a Vite + TypeScript app with just-dom, jd.config.ts, and @just-dom/router",
   "homepage": "https://just-dom.vercel.app/docs/jd-config",
   "repository": {

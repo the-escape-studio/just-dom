@@ -1,8 +1,7 @@
 # @just-dom/router
 
-## 2.0.0
+## 1.0.0
 
-### Patch Changes
+### Major Changes
 
-- Updated dependencies [f79027a]
-  - just-dom@3.0.0
+- Initial release of the client-side router plugin for `just-dom` (first stable line is **1.x** with `just-dom@2.x`).

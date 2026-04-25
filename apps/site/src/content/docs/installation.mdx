@@ -4,6 +4,19 @@ description: Install Just DOM in your project
 icon: Download
 ---
 
+## New Vite project CLI
+
+The fastest way to try Just DOM in a real app is **`create-just-dom`**: it runs **Vite**, adds **`just-dom`**, writes **`jd.config`**, and optionally **`@just-dom/router`**.
+
+```bash
+npm create just-dom@latest
+npm create just-dom@latest my-app
+```
+
+You will be asked for **TypeScript vs JavaScript** and **with or without the router** (defaults: TS + router). For scripts and non-interactive use, see flags on **[Start a new project](/docs/jd-config#start-a-new-project)** (`npm create just-dom@latest -- --help`).
+
+---
+
 ## Package Manager
 
 Install Just DOM using your preferred package manager:
@@ -29,4 +42,4 @@ console.log(el); // HTMLDivElement
 
 ## Next Steps
 
-Now that you have Just DOM installed, check out the [Getting Started](/docs/getting-started) guide to learn how to use it.
+Now that you have Just DOM installed, check out the [Getting Started](/docs/getting-started) guide to learn how to use it. When you add plugins, the usual pattern is a single **[App setup (jd.config)](/docs/jd-config)** module that re-exports `jd`.

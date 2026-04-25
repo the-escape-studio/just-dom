@@ -1,0 +1,34 @@
+{
+  "name": "create-just-dom",
+  "version": "0.0.0",
+  "description": "Scaffold a Vite + TypeScript app with just-dom, jd.config.ts, and @just-dom/router",
+  "homepage": "https://just-dom.vercel.app/docs/jd-config",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/the-escape-studio/just-dom.git",
+    "directory": "packages/create-just-dom"
+  },
+  "bugs": {
+    "url": "https://github.com/the-escape-studio/just-dom/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "bin": {
+    "create-just-dom": "./bin/create-just-dom.mjs"
+  },
+  "files": [
+    "bin",
+    "README.md"
+  ],
+  "keywords": [
+    "just-dom",
+    "vite",
+    "scaffold",
+    "create-app"
+  ],
+  "engines": {
+    "node": ">=20"
+  }
+}

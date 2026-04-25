@@ -1,6 +1,6 @@
 # @just-dom/lucide
 
-Lucide icons as a [just-dom](https://github.com/the-escape-studio/just-dom) plugin: typed `icon` helpers on your DOM object.
+Lucide icons as a [just-dom](https://github.com/the-escape-studio/just-dom) plugin: typed `icon` helpers on your configured DOM object.
 
 - **Documentation:** [Lucide plugin](https://just-dom.vercel.app/docs/official-plugins/lucide)
 - **npm:** `@just-dom/lucide`
@@ -12,7 +12,7 @@ Lucide icons as a [just-dom](https://github.com/the-escape-studio/just-dom) plug
 npm install @just-dom/lucide just-dom
 ```
 
-## Example
+## Example (inline `withPlugins`)
 
 ```ts
 import DOM, { withPlugins } from "just-dom";
@@ -26,4 +26,11 @@ const jd = withPlugins(DOM, [
 jd.icon("House", { size: 24 });
 ```
 
-See the docs for `lucidePlugin` (all icons) vs `createLucidePlugin` (tree-shake friendly).
+## Recommended: `jd.config.ts`
+
+Register Lucide next to other plugins in one module and import **`jd`** everywhere else:
+
+- **[App setup (jd.config)](https://just-dom.vercel.app/docs/jd-config)**
+- New app: **`npm create just-dom@latest`** ([CLI](https://just-dom.vercel.app/docs/jd-config#start-a-new-project))
+
+See the site docs for **`lucidePlugin`** (all icons) vs **`createLucidePlugin`** (tree-shake friendly).

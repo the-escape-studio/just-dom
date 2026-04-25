@@ -1,0 +1,262 @@
+---
+title: "@just-dom/router"
+description: Client-side router plugin for Just DOM
+---
+
+`@just-dom/router` adds **`router`** and **`routerLink`** to your Just DOM object so you can build small SPAs with nested routes, layouts, dynamic params (`:id`), and navigation without full reloads.
+
+Use **[`jd.config.ts`](/docs/jd-config)** to register the plugin once, then keep **`defineRoutes`** in **`main.ts`** (or split only layouts/pages into other files that `import { jd }`). New app: **[`create-just-dom`](/docs/jd-config#start-a-new-project)**.
+
+> **Why `routerLink`?** Just DOM already exposes `link` for creating `<link>` elements. The plugin uses `routerLink` for `<a>` navigation so tag factories stay intact.
+
+## Installation
+
+```package-install
+@just-dom/router
+```
+
+Peer dependency: `just-dom`.
+
+Use a single **[`jd.config`](/docs/jd-config)** (or equivalent) for `withPlugins`; define the **route table in `main.ts`** (or any module that does **not** need to be imported from `jd.config`).
+
+## Quick start
+
+### `jd.config.ts`
+
+```ts
+import DOM, { withPlugins } from "just-dom";
+import { createRouterPlugin } from "@just-dom/router";
+
+export const router = createRouterPlugin();
+export const jd = withPlugins(DOM, [router]);
+export type Jd = typeof jd;
+```
+
+### `main.ts`
+
+```ts
+import { createRoot } from "just-dom";
+import { defineRoutes } from "@just-dom/router";
+import { jd } from "./jd.config";
+
+const routes = defineRoutes([
+  {
+    layout: ({ outlet }) =>
+      jd.div({ style: { fontFamily: "system-ui, sans-serif" } }, [
+        jd.nav(
+          { style: { display: "flex", gap: "12px", marginBottom: "16px" } },
+          [
+            jd.routerLink({ href: "/" }, ["Home"]),
+            jd.routerLink({ href: "/users/42" }, ["User 42"]),
+          ],
+        ),
+        outlet,
+      ]),
+    children: [
+      { index: true, element: () => jd.h1({}, ["Home"]) },
+      {
+        path: "users/:id",
+        element: ({ params }) => jd.h1({}, [`User ${params.id}`]),
+      },
+      { path: "*", element: () => jd.h1({}, ["Not found"]) },
+    ],
+  },
+]);
+
+createRoot("app", jd.div({ className: "app" }, [jd.router(routes)]));
+```
+
+## Modes
+
+### Browser (default)
+
+Uses the real URL (`history.pushState` + `popstate`). You usually need server/hosting configuration so deep links resolve to your HTML entry.
+
+### Hash
+
+Useful on static hosts without SPA fallback:
+
+```ts
+const router = createRouterPlugin({ mode: "hash" });
+```
+
+Links can use either `#/path` or normal paths like `/path` — both are translated into hash updates.
+
+## Route tree
+
+Routes are a **readonly array** at each depth. Typical shape:
+
+| Field | Description |
+|-------|-------------|
+| `path` | Segment pattern relative to the parent, e.g. `"users/:id"`, `"*"`. Omit / `""` / `"/"` for a segment-less branch (layout wrapper). |
+| `index` | Matches when no segments remain at this depth. |
+| `layout` | Optional wrapper receiving `{ outlet, params, search, pathname }`. |
+| `element` | Leaf renderer receiving `{ params, search, pathname }`. |
+| `children` | Nested routes. |
+
+Put less-specific routes **after** more-specific ones. The catch-all `{ path: "*" }` should usually be **last** among siblings.
+
+## Layouts and pages in other files (import `jd`)
+
+Same pattern as **[App setup (jd.config)](/docs/jd-config)**: components import **`jd` from your config module**—you do **not** pass `jd` through every function unless you want to (e.g. tests). Use `RouteLayoutRenderer`, `RouteElementRenderer`, and `RouteMatchContext` for strict route typings.
+
+### `components/AppShell.ts`
+
+```ts
+import type { RouteLayoutRenderer } from "@just-dom/router";
+import { jd } from "../jd.config";
+
+export const appShell: RouteLayoutRenderer = ({ outlet, pathname }) =>
+  jd.div({ style: { fontFamily: "system-ui, sans-serif" } }, [
+    jd.nav(
+      { style: { display: "flex", gap: "12px", marginBottom: "12px" } },
+      [
+        jd.routerLink(
+          ({ isExact }) => ({
+            href: "/",
+            className: isExact ? "active" : "",
+            "aria-current": isExact ? "page" : undefined,
+          }),
+          ["Home"],
+        ),
+        jd.routerLink(
+          ({ isExact }) => ({
+            href: "/users/1",
+            className: isExact ? "active" : "",
+            "aria-current": isExact ? "page" : undefined,
+          }),
+          ["User 1"],
+        ),
+      ],
+    ),
+    jd.p({ style: { fontSize: "12px", color: "#6b7280" } }, [pathname]),
+    outlet,
+  ]);
+```
+
+### `components/UserHeading.ts` (optional helper)
+
+```ts
+import type { RouteMatchContext } from "@just-dom/router";
+
+export function userHeading(ctx: RouteMatchContext): string {
+  return `User ${ctx.params.id}`;
+}
+```
+
+### `main.ts` (routes stay here; import pieces)
+
+```ts
+import { createRoot } from "just-dom";
+import { defineRoutes } from "@just-dom/router";
+import { jd } from "./jd.config";
+import { appShell } from "./components/AppShell";
+import { userHeading } from "./components/UserHeading";
+
+const routes = defineRoutes([
+  {
+    layout: appShell,
+    children: [
+      { index: true, element: () => jd.h1({}, ["Home"]) },
+      {
+        path: "users/:id",
+        element: (ctx) => jd.h1({}, [userHeading(ctx)]),
+      },
+      { path: "*", element: () => jd.h1({}, ["Not found"]) },
+    ],
+  },
+]);
+
+createRoot("app", jd.div({ className: "app" }, [jd.router(routes)]));
+```
+
+### If you ever hit a circular import
+
+Only then fall back to small factories like `homePage(jd)` **or** `import type { Jd }` plus a parameter, so `jd.config.ts` never imports files that import `jd.config.ts`. See [App setup (jd.config)](/docs/jd-config).
+
+## API
+
+### createRouterPlugin
+
+```ts
+function createRouterPlugin(options?: {
+  mode?: "browser" | "hash";
+  basename?: string;
+}): JDPlugin<{
+  router: (
+    routes: readonly RouteDefinition[],
+    mountOptions?: RouterMountOptions,
+  ) => HTMLDivElement;
+  routerLink: (
+    props:
+      | (JDCreateElementOptions<"a"> & {
+          href: string;
+          replace?: boolean;
+        })
+      | ((ctx: {
+          isActive: boolean;
+          isExact: boolean;
+          pathname: string;
+          href: string;
+        }) => JDCreateElementOptions<"a"> & {
+          href: string;
+          replace?: boolean;
+        }),
+    children?: JDCreateElementChildren,
+  ) => HTMLAnchorElement;
+}>;
+```
+
+### router
+
+Mounts a router into a `HTMLDivElement` and keeps it in sync with navigation.
+
+The returned element may expose `dispose()` (non-standard) to remove internal `popstate` / `hashchange` subscriptions when you tear the UI down.
+
+### routerLink
+
+Creates an `<a>` that performs in-app navigation for same-origin URLs. Supports modifier keys (open in new tab, etc.) without interception.
+
+Pass either a props object or a props function. The function receives active-state helpers and returns the final anchor props:
+
+```ts
+jd.routerLink(
+  ({ isActive, isExact }) => ({
+    href: "/users",
+    className: isActive ? "active" : "",
+    style: { fontWeight: isExact ? "700" : "400" },
+    "aria-current": isExact ? "page" : undefined,
+  }),
+  ["Users"],
+);
+```
+
+`isExact` means the current path exactly equals the link target. `isActive` is also true for nested paths, so `/users` is active on `/users/1`.
+
+### defineRoutes
+
+Identity helper that preserves literal types for route arrays.
+
+### navigate
+
+```ts
+function navigate(
+  to: string,
+  options?: { replace?: boolean; mode?: RouterMode; basename?: string },
+): void;
+```
+
+Imperative navigation; defaults to `mode: "browser"` if omitted.
+
+## Exports
+
+| Export | Description |
+|--------|-------------|
+| `createRouterPlugin` | Factory for configured router plugins |
+| `routerPlugin` | Pre-built plugin (`browser` mode) |
+| `defineRoutes` | Typed route tree helper |
+| `navigate` | Programmatic navigation |
+| `matchRouteTree` | Low-level matcher |
+| `RouteDefinition`, `RouteMatchContext` | Route tree and render context types |
+| `RouteElementRenderer`, `RouteLayoutRenderer` | Typed signatures for `element` and `layout` |
+| `RouterMode`, `RouterMountOptions`, `NavigateOptions` | Router configuration types |

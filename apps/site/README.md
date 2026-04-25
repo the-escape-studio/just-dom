@@ -5,7 +5,9 @@ Next.js + [Fumadocs](https://fumadocs.dev) app: documentation, API reference, an
 - **Local dev** (from repo root): `pnpm dev` (Turborepo) or from this app: `pnpm dev`
 - **Production:** [just-dom.vercel.app](https://just-dom.vercel.app)
 
-The site consumes workspace packages `just-dom`, `@just-dom/lucide`, and `@workspace/ui` for examples and the playground. Playground code lives under `src/views/playground/`.
+The site consumes workspace packages `just-dom`, `@just-dom/lucide`, `@just-dom/router`, and `@workspace/ui` for examples and the playground. Playground code lives under `src/views/playground/`.
+
+End-user guides cover **[App setup (jd.config)](https://just-dom.vercel.app/docs/jd-config)** and the **`create-just-dom`** scaffold (`npm create just-dom@latest`); the CLI package lives at `packages/create-just-dom` in this monorepo.
 
 ### Playground types
 

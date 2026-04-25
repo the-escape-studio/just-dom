@@ -8,8 +8,10 @@ import DOM, {
   withPlugins,
 } from "just-dom";
 import { createLucidePlugin } from "@just-dom/lucide";
+import { createRouterPlugin, defineRoutes } from "@just-dom/router";
 import { House, Heart, Loader, Menu, Search, Star } from "lucide";
 import { PLAYGROUND_LUCIDE_TYPES } from "./playground-lucide-ambient";
+import { PLAYGROUND_ROUTER_TYPES } from "./playground-router-ambient";
 import { PLAYGROUND_TYPES } from "./playground-globals.generated";
 import { copyToClipboard } from "@/lib/utils";
 import { cn } from "@workspace/ui/lib/utils";
@@ -268,6 +270,86 @@ const app = jd.div(
 createRoot(mount, app);`,
   },
   {
+    label: "Router (official plugin)",
+    value: "router",
+    code: `const router = createRouterPlugin({ mode: "hash" });
+const jd = withPlugins(DOM, [router]);
+
+const routes = defineRoutes([
+  {
+    layout: ({ outlet }) =>
+      jd.div({ style: { padding: "16px", fontFamily: "system-ui, sans-serif" } }, [
+        jd.div(
+          {
+            style: {
+              display: "flex",
+              gap: "12px",
+              marginBottom: "12px",
+              flexWrap: "wrap",
+            },
+          },
+          [
+            jd.routerLink(
+              ({ isExact }) => ({
+                href: "#/",
+                style: {
+                  color: isExact ? "#2563eb" : "",
+                  fontWeight: isExact ? "700" : "",
+                },
+                "aria-current": isExact ? "page" : undefined,
+              }),
+              ["Home"],
+            ),
+            jd.routerLink(
+              ({ isExact }) => ({
+                href: "#/user/alice",
+                style: {
+                  color: isExact ? "#2563eb" : "",
+                  fontWeight: isExact ? "700" : "",
+                },
+                "aria-current": isExact ? "page" : undefined,
+              }),
+              ["Alice"],
+            ),
+            jd.routerLink(
+              ({ isExact }) => ({
+                href: "#/user/bob",
+                style: {
+                  color: isExact ? "#2563eb" : "",
+                  fontWeight: isExact ? "700" : "",
+                },
+                "aria-current": isExact ? "page" : undefined,
+              }),
+              ["Bob"],
+            ),
+          ],
+        ),
+        outlet,
+      ]),
+    children: [
+      {
+        index: true,
+        element: () =>
+          jd.p({ style: { color: "#6b7280" } }, ["Pick a route via the links."]),
+      },
+      {
+        path: "user/:name",
+        element: ({ params }) =>
+          jd.p({ style: { marginTop: "8px" } }, ["Hello, " + params.name + "!"]),
+      },
+      { path: "*", element: () => jd.p({ style: { color: "#ef4444" } }, ["No route"]) },
+    ],
+  },
+]);
+
+const app = jd.div({}, [
+  jd.h2({}, ["@just-dom/router"]),
+  jd.router(routes),
+]);
+
+createRoot(mount, app);`,
+  },
+  {
     label: "Plugin",
     value: "plugin",
     code: `const badgePlugin = definePlugin({
@@ -428,6 +510,8 @@ const PlaygroundView = () => {
         "definePlugin",
         "withPlugins",
         "createLucidePlugin",
+        "createRouterPlugin",
+        "defineRoutes",
         "LUCIDE",
         "mount",
         "console",
@@ -464,6 +548,8 @@ const PlaygroundView = () => {
         definePlugin,
         withPlugins,
         createLucidePlugin,
+        createRouterPlugin,
+        defineRoutes,
         PLAYGROUND_LUCIDE_ICONS,
         mountEl,
         scopedConsole,
@@ -626,6 +712,10 @@ const PlaygroundView = () => {
               m.languages.typescript.typescriptDefaults.addExtraLib(
                 PLAYGROUND_LUCIDE_TYPES,
                 "playground-lucide.d.ts",
+              );
+              m.languages.typescript.typescriptDefaults.addExtraLib(
+                PLAYGROUND_ROUTER_TYPES,
+                "playground-router.d.ts",
               );
             }}
             onMount={handleEditorMount}

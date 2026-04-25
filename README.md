@@ -11,6 +11,7 @@ Monorepo for **just-dom** and official plugins. Documentation, guides, and the p
 |------|-------------|
 | `packages/just-dom` | Core library (`just-dom` on npm) |
 | `packages/plugins` | Official [`@just-dom/*` packages](packages/plugins/README.md) (one folder per plugin) |
+| `packages/create-just-dom` | [`create-just-dom`](https://www.npmjs.com/package/create-just-dom) — Vite + TS scaffold (`npm create just-dom`); locally: `pnpm create:app` |
 | `apps/site` | Documentation site and playground (Fumadocs + Next.js) |
 | `packages/ui` | Internal UI for the site |
 | `packages/eslint-config` / `packages/typescript-config` | Shared workspace tooling |
@@ -20,6 +21,13 @@ Monorepo for **just-dom** and official plugins. Documentation, guides, and the p
 ```bash
 pnpm install
 pnpm dev
+```
+
+Scaffold a Vite app (with `jd.config`, optional router, TS or JS — prompts or flags) from this repo:
+
+```bash
+pnpm create:app ../path/to/my-app
+# same as: node ./packages/create-just-dom/bin/create-just-dom.mjs ../path/to/my-app
 ```
 
 Releases and versioning use [Changesets](https://github.com/changesets/changesets) (`pnpm changeset` from the root).

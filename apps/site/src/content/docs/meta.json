@@ -4,6 +4,7 @@
     "index",
     "installation",
     "getting-started",
+    "jd-config",
     "typescript",
     "---Plugins---",
     "create-a-plugin",

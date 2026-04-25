@@ -1,0 +1,54 @@
+{
+  "name": "@just-dom/router",
+  "version": "1.0.0",
+  "description": "Client-side router plugin for just-dom",
+  "homepage": "https://just-dom.vercel.app/docs/official-plugins/router",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/the-escape-studio/just-dom.git",
+    "directory": "packages/plugins/router"
+  },
+  "bugs": {
+    "url": "https://github.com/the-escape-studio/just-dom/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "test": "jest"
+  },
+  "peerDependencies": {
+    "just-dom": ">=1.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "jest": "^30.3.0",
+    "jest-environment-jsdom": "^30.3.0",
+    "just-dom": "workspace:*",
+    "ts-jest": "^29.4.9",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  }
+}

@@ -4,6 +4,8 @@ description: Learn the basics of Just DOM
 icon: Rocket
 ---
 
+Prefer a full **Vite** project with **`jd.config`** already wired? Run **`npm create just-dom@latest`** — see **[Installation](/docs/installation#new-vite-project-cli)** and **[App setup](/docs/jd-config#start-a-new-project)** for prompts and flags (`--js`, `--no-router`, `--pnpm`, …).
+
 ## Import
 
 Just DOM supports multiple import methods for maximum flexibility:
@@ -18,6 +20,12 @@ import { createRef, createRoot, createElFromHTMLString } from "just-dom";
 // Combined
 import DOM, { createRef, createRoot } from "just-dom";
 ```
+
+## Optional: one configured `jd` for the whole app
+
+For anything beyond the default `DOM` export—especially **[plugins](/docs/plugin-api/with-plugins)**—it helps to centralize setup in a single module (often `jd.config.ts`) and import **`jd`** from there in your entry file and components. That pattern is documented in **[App setup (jd.config)](/docs/jd-config)**.
+
+To **bootstrap a new Vite + TypeScript** project with `jd.config.ts` already in place, use **[`create-just-dom`](/docs/jd-config#start-a-new-project)** (`npm create just-dom@latest`).
 
 ## Creating Elements
 
@@ -218,6 +226,7 @@ createRoot("app", app);
 
 <Cards>
   <Card title="API Reference" href="/docs/core-api/dom-object" />
+  <Card title="App setup (jd.config)" href="/docs/jd-config" />
   <Card title="TypeScript" href="/docs/typescript" />
   <Card title="Create a Plugin" href="/docs/create-a-plugin" />
 </Cards>

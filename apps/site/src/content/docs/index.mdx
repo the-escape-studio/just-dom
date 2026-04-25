@@ -6,6 +6,16 @@ icon: BookOpen
 
 Just DOM is a lightweight JavaScript library that simplifies DOM manipulation, providing an intuitive and functional interface for building pure web applications — **no virtual DOM, no build step required**.
 
+## New project
+
+Bootstrap **Vite + just-dom** (with `jd.config` and optional router) in one command:
+
+```bash
+npm create just-dom@latest
+```
+
+Details, flags (`--js`, `--no-router`, …), and monorepo usage: **[Installation](/docs/installation#new-vite-project-cli)** and **[App setup](/docs/jd-config#start-a-new-project)**.
+
 ## Why Just DOM?
 
 Modern frameworks add complexity that isn't always needed. Just DOM gives you a clean, declarative API to work directly with the real DOM while keeping your code organized and type-safe.
@@ -36,8 +46,10 @@ createRoot("app", app);
 ## Quick Start
 
 <Cards>
+  <Card title="New Vite project (CLI)" href="/docs/installation#new-vite-project-cli" description="npm create just-dom" />
   <Card title="Installation" href="/docs/installation" />
   <Card title="Getting Started" href="/docs/getting-started" />
+  <Card title="App setup (jd.config)" href="/docs/jd-config" />
   <Card title="TypeScript" href="/docs/typescript" />
   <Card title="Create a Plugin" href="/docs/create-a-plugin" />
 </Cards>

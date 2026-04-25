@@ -34,6 +34,8 @@ const el = jd.greeting("World");
 // el is HTMLDivElement, fully typed
 ```
 
+In real apps, prefer registering plugins in one place—see **[App setup (jd.config)](/docs/jd-config)**—so every file imports the same `jd` instead of repeating `withPlugins`.
+
 ## The Plugin Interface
 
 ```ts
@@ -152,6 +154,8 @@ When publishing a plugin as an npm package:
 2. Build with both CJS and ESM formats (tsup makes this easy)
 3. Include TypeScript declarations (`.d.ts` / `.d.mts`)
 4. Use the `@just-dom/` scope for official plugins (e.g. `@just-dom/toast`, `@just-dom/lucide`)
+
+Application authors usually register published plugins once in **[App setup (jd.config)](/docs/jd-config)**. New Vite + TypeScript projects can start from **[`create-just-dom`](/docs/jd-config#start-a-new-project)**.
 
 Example `package.json`:
 

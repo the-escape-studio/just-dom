@@ -12,7 +12,8 @@
     "version-packages": "changeset version",
     "sync:playground-types": "turbo build --filter=just-dom && pnpm --filter site run generate:playground-types",
     "check:playground-types": "pnpm run sync:playground-types && git diff --exit-code -- apps/site/src/views/playground/playground-globals.generated.ts",
-    "release": "turbo build --filter=just-dom --filter=@just-dom/lucide && pnpm --filter site run generate:playground-types && changeset publish"
+    "create:app": "node ./packages/create-just-dom/bin/create-just-dom.mjs",
+    "release": "turbo build --filter=just-dom --filter=@just-dom/lucide --filter=@just-dom/router && pnpm --filter site run generate:playground-types && changeset publish"
   },
   "devDependencies": {
     "@changesets/cli": "^2.31.0",

@@ -1,0 +1,118 @@
+---
+title: App setup (jd.config)
+description: One module for just-dom, plugins, and a typed jd export—used from main and every component
+icon: Layers
+---
+
+Just DOM does **not** load a magic config file at runtime (unlike Next.js reading `next.config.ts`). What teams usually want is the same **idea**: a **single app module**—often named `jd.config.ts` (TypeScript) or `jd.config.js` (JavaScript)—where you call `withPlugins` once, then **re-export** the configured object as `jd`. Your entry (`main.ts` / `main.js`) and every UI module import `jd` from there, like a small shared **runtime**.
+
+## Start a new project
+
+Use the **`create-just-dom`** CLI to generate a **Vite** app with `jd.config` and a working entry file:
+
+```bash
+npm create just-dom@latest
+npm create just-dom@latest my-app
+```
+
+In an interactive terminal you will be asked:
+
+1. **TypeScript or JavaScript** (default: TypeScript)
+2. Whether to install **`@just-dom/router`** (default: yes)
+
+Non-interactive / CI: pass **`--yes`** to skip prompts (defaults: TypeScript + try router), or set each option explicitly:
+
+| Flag | Meaning |
+|------|---------|
+| `--ts`, `--typescript` | Vite `vanilla-ts` template |
+| `--js`, `--javascript` | Vite `vanilla` template (`.js` entry + `jd.config.js`) |
+| `--router` | Install `just-dom` + `@just-dom/router` and add a starter route table |
+| `--no-router` | Install `just-dom` only |
+| `--pnpm` | Use `pnpm add` inside the new folder instead of `npm install` |
+| `-y`, `--yes` | Skip prompts |
+| `-h`, `--help` | Print all flags |
+
+Examples:
+
+```bash
+npm create just-dom@latest my-app -- --yes
+npm create just-dom@latest my-app -- --js --no-router
+npm create just-dom@latest my-app -- --ts --router --pnpm
+```
+
+From this monorepo while developing the CLI:
+
+```bash
+pnpm create:app ../path/to/my-app
+```
+
+The tool always invokes **`npm create vite`** for compatibility. If **`@just-dom/router` is not on npm** yet, the install step falls back to **`just-dom` only** and generates a **no-router** starter even when you asked for the router (check the generated `README.md`).
+
+## `jd.config.ts`
+
+```ts
+import DOM, { withPlugins } from "just-dom";
+import { createRouterPlugin } from "@just-dom/router";
+
+const router = createRouterPlugin();
+
+/** Your app’s configured DOM (tags + all plugins). */
+export const jd = withPlugins(DOM, [router]);
+
+/** Use this type in helpers when you need “DOM + plugins” typing. */
+export type Jd = typeof jd;
+```
+
+Add more entries to the same array for other official plugins (for example `@just-dom/lucide`) or your own `definePlugin` modules.
+
+Keep this file **small and one-way**: only `just-dom`, plugins, and optional shared constants. Do **not** import `main.ts`, route tables, or screens that themselves import `jd` from here—otherwise you risk **circular imports** and undefined initialization order.
+
+## `main.ts` (entry)
+
+```ts
+import { createRoot } from "just-dom";
+import { jd } from "./jd.config";
+
+const app = jd.div({ className: "app" }, [
+  jd.h1({}, ["Hello"]),
+]);
+
+createRoot("app", app);
+```
+
+## Components (import `jd`, not `DOM`)
+
+```ts
+import { jd } from "../jd.config";
+
+export function UserCard(name: string) {
+  return jd.article({ className: "card" }, [
+    jd.h2({}, [name]),
+    jd.icon("House", { size: 18 }),
+  ]);
+}
+```
+
+This is the closest analogue to “always having React in scope”: your configured **`jd`** is the stable import from **your** module instead of from `just-dom` alone.
+
+## Why not pass `jd` as an argument everywhere?
+
+You can—`function UserCard(jd: Jd, name: string)` is fine for libraries or tests. For app code, a **singleton module** is usually simpler:
+
+- Less boilerplate on every call site.
+- Same pattern as a configured HTTP client or logger.
+- TypeScript still infers everything if you export `export type Jd = typeof jd`.
+
+The **factory style** (`homePage(jd)`) appears in docs only when you want **zero runtime import** of `jd.config` from a file (for example to break a circular dependency). If `jd.config` never imports your pages, you can **always** use `import { jd } from "./jd.config"` instead.
+
+## Official plugins
+
+Register plugins **only** in `jd.config.ts`. Feature docs (`@just-dom/router`, `@just-dom/lucide`, …) stay focused on the plugin API; this page is the **project-level** convention for wiring them together.
+
+## See also
+
+<Cards>
+  <Card title="withPlugins" href="/docs/plugin-api/with-plugins" />
+  <Card title="Create a Plugin" href="/docs/create-a-plugin" />
+  <Card title="Router plugin" href="/docs/official-plugins/router" />
+</Cards>

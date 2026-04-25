@@ -5,6 +5,8 @@ description: Extend the DOM object with one or more plugins
 
 `withPlugins` takes the base `DOM` object and an array of plugins, returning a new object that includes both the original DOM methods and all plugin extensions. The return type is fully inferred by TypeScript.
 
+For a larger app, you usually call `withPlugins` **once** in a dedicated module (conventionally [`jd.config`](/docs/jd-config)) and import the result as `jd` from your entry and components. To generate that layout in a new **Vite** app, use **[`create-just-dom`](/docs/jd-config#start-a-new-project)**.
+
 ## Import
 
 ```ts

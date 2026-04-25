@@ -1,5 +1,5 @@
 {
   "title": "Official Plugins",
   "icon": "Package",
-  "pages": ["lucide"]
+  "pages": ["lucide", "router"]
 }

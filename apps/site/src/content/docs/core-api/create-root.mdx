@@ -96,3 +96,16 @@ const app = DOM.div({ className: "app" }, [
 
 createRoot("app", app);
 ```
+
+### With plugins (`jd`)
+
+When you use [`withPlugins`](/docs/plugin-api/with-plugins), build the tree with your configured **`jd`** export (see **[App setup (jd.config)](/docs/jd-config)**) and pass it to `createRoot` the same way:
+
+```ts title="main.ts"
+import { createRoot } from "just-dom";
+import { jd } from "./jd.config";
+
+createRoot("app", jd.div({ className: "app" }, [/* … */]));
+```
+
+Scaffold: [`create-just-dom`](/docs/jd-config#start-a-new-project).

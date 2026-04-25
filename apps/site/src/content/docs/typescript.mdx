@@ -70,6 +70,25 @@ The library exports the following types for advanced use cases:
 | `JDRef<T>` | Ref object for a given tag type |
 | `JDom` | Type of the default `DOM` export object |
 
+### Configured app DOM (`typeof jd`)
+
+When you use [`withPlugins`](/docs/plugin-api/with-plugins) in a single app module (see **[App setup (jd.config)](/docs/jd-config)**), export a type alias so helpers stay aligned with your plugins:
+
+```ts
+import DOM, { withPlugins } from "just-dom";
+
+export const jd = withPlugins(DOM, [/* …plugins… */]);
+export type Jd = typeof jd;
+
+function container(jd: Jd) {
+  return jd.div({ className: "wrap" });
+}
+```
+
+`Jd` is a superset of `JDom` once plugins are merged; `typeof jd` captures that automatically.
+
+New Vite + TypeScript projects can start from **[`create-just-dom`](/docs/jd-config#start-a-new-project)**.
+
 ### JDCreateElementOptions
 
 The props type for each element combines:

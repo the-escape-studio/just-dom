@@ -155,3 +155,9 @@ const frag = DOM.fragment([
   DOM.p({}, "Second"),
 ]);
 ```
+
+## Plugins and a configured `jd`
+
+The default `DOM` export has no plugin methods. Use [`withPlugins`](/docs/plugin-api/with-plugins) to merge extensions (icons, router, your own `definePlugin` modules, …). In applications, the usual pattern is a single **[`jd.config.ts`](/docs/jd-config)** module that exports `jd` for the rest of the codebase.
+
+To start a new **Vite + TypeScript** project with that layout, use **[`create-just-dom`](/docs/jd-config#start-a-new-project)** (`npm create just-dom@latest`).

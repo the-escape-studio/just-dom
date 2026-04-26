@@ -51,9 +51,9 @@ function toSvgAttrs(
  * const lucide = createLucidePlugin({ icons: { House, Search } });
  * const jd = withPlugins(DOM, [lucide]);
  *
- * jd.icon("House", { size: 24 });   // OK
- * jd.icon("Search");                 // OK
- * jd.icon("Missing");                // TS error
+ * jd.lucide("House", { size: 24 });   // OK
+ * jd.lucide("Search");                 // OK
+ * jd.lucide("Missing");                // TS error
  * ```
  */
 export function createLucidePlugin<T extends Record<string, IconNode>>(config: {
@@ -62,7 +62,7 @@ export function createLucidePlugin<T extends Record<string, IconNode>>(config: {
   return definePlugin({
     name: "lucide",
     extend: () => ({
-      icon: (
+      lucide: (
         name: keyof T & string,
         options?: LucideIconOptions
       ): SVGSVGElement => {

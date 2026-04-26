@@ -3,7 +3,7 @@ title: "@just-dom/lucide"
 description: Lucide SVG icons plugin for Just DOM
 ---
 
-`@just-dom/lucide` integrates [Lucide](https://lucide.dev) icons into Just DOM. It adds an `icon` method to the DOM object that creates fully typed SVG icon elements.
+`@just-dom/lucide` integrates [Lucide](https://lucide.dev) icons into Just DOM. It adds a `lucide` method to the DOM object that creates fully typed SVG icon elements.
 
 ## Installation
 
@@ -27,9 +27,9 @@ const jd = withPlugins(DOM, [
 ]);
 
 const nav = jd.nav({ className: "sidebar" }, [
-  jd.icon("House", { size: 20 }),
-  jd.icon("Search", { size: 20 }),
-  jd.icon("Settings", { size: 20 }),
+  jd.lucide("House", { size: 20 }),
+  jd.lucide("Search", { size: 20 }),
+  jd.lucide("Settings", { size: 20 }),
 ]);
 ```
 
@@ -43,7 +43,7 @@ Creates a plugin instance with a specific set of icons. Only registered icons ar
 function createLucidePlugin<T extends Record<string, IconNode>>(config: {
   icons: T;
 }): JDPlugin<{
-  icon: (name: keyof T & string, options?: LucideIconOptions) => SVGSVGElement;
+  lucide: (name: keyof T & string, options?: LucideIconOptions) => SVGSVGElement;
 }>;
 ```
 
@@ -55,14 +55,14 @@ function createLucidePlugin<T extends Record<string, IconNode>>(config: {
 
 #### Returns
 
-A `JDPlugin` that adds an `icon` method to the DOM object.
+A `JDPlugin` that adds a `lucide` method to the DOM object.
 
-### icon
+### lucide
 
 The method added by the plugin.
 
 ```ts
-jd.icon(name, options?): SVGSVGElement
+jd.lucide(name, options?): SVGSVGElement
 ```
 
 | Parameter | Type | Description |
@@ -95,9 +95,9 @@ const jd = withPlugins(DOM, [
   createLucidePlugin({ icons: { Heart, Star, ThumbsUp } }),
 ]);
 
-jd.icon("Heart");     // OK
-jd.icon("Star");      // OK
-jd.icon("Missing");   // TypeScript error!
+jd.lucide("Heart");     // OK
+jd.lucide("Star");      // OK
+jd.lucide("Missing");   // TypeScript error!
 ```
 
 ### All Icons (Prototyping)
@@ -110,9 +110,9 @@ import { lucidePlugin } from "@just-dom/lucide";
 
 const jd = withPlugins(DOM, [lucidePlugin]);
 
-jd.icon("Heart");
-jd.icon("Rocket");
-jd.icon("Zap");
+jd.lucide("Heart");
+jd.lucide("Rocket");
+jd.lucide("Zap");
 ```
 
 > **Note:** This includes the entire Lucide icon set in your bundle. Use `createLucidePlugin` for production builds.
@@ -120,7 +120,7 @@ jd.icon("Zap");
 ### Customizing Icons
 
 ```ts
-const heart = jd.icon("Heart", {
+const heart = jd.lucide("Heart", {
   size: 32,
   color: "red",
   strokeWidth: 2.5,
@@ -140,7 +140,7 @@ const button = jd.button(
     className: "btn",
     onclick: () => console.log("liked!"),
   },
-  [jd.icon("Heart", { size: 16 }), " Like"]
+  [jd.lucide("Heart", { size: 16 }), " Like"]
 );
 ```
 
@@ -152,7 +152,7 @@ const icons = ["House", "User", "Settings", "Bell"] as const;
 const nav = jd.ul(
   { className: "nav" },
   icons.map((name) =>
-    jd.li({}, [jd.icon(name, { size: 18 }), ` ${name}`])
+    jd.li({}, [jd.lucide(name, { size: 18 }), ` ${name}`])
   ),
 );
 ```
@@ -163,5 +163,5 @@ const nav = jd.ul(
 |--------|------|-------------|
 | `createLucidePlugin` | `function` | Factory for tree-shakeable plugin instances |
 | `lucidePlugin` | `JDPlugin` | Pre-configured plugin with all Lucide icons |
-| `LucideIconOptions` | `type` | Options interface for the `icon` method |
+| `LucideIconOptions` | `type` | Options interface for the `lucide` method |
 | `IconNode` | `type` | Re-exported from `lucide` for advanced use |

@@ -1,6 +1,6 @@
 # @just-dom/lucide
 
-Lucide icons as a [just-dom](https://github.com/the-escape-studio/just-dom) plugin: typed `icon` helpers on your configured DOM object.
+Lucide icons as a [just-dom](https://github.com/the-escape-studio/just-dom) plugin: typed `lucide` helper on your configured DOM object.
 
 - **Documentation:** [Lucide plugin](https://just-dom.vercel.app/docs/official-plugins/lucide)
 - **npm:** `@just-dom/lucide`
@@ -23,7 +23,7 @@ const jd = withPlugins(DOM, [
   createLucidePlugin({ icons: { House, Search } }),
 ]);
 
-jd.icon("House", { size: 24 });
+jd.lucide("House", { size: 24 });
 ```
 
 ## Recommended: `jd.config.ts`

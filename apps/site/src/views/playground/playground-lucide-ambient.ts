@@ -22,7 +22,7 @@ declare const LUCIDE: {
 };
 declare function createLucidePlugin<T extends Record<string, IconNode>>(config: { icons: T }): {
   name: string;
-  extend: () => { icon: (name: keyof T & string, options?: LucideIconOptions) => SVGSVGElement };
+  extend: () => { lucide: (name: keyof T & string, options?: LucideIconOptions) => SVGSVGElement };
 };
 
 `.trim();

@@ -225,9 +225,9 @@ const app = jd.div(
     jd.div(
       { style: { display: "flex", gap: "12px", marginTop: "16px", alignItems: "center" } },
       [
-        jd.icon("House", { size: 28, color: "#3b82f6" }),
-        jd.icon("Search", { size: 28, color: "#22c55e" }),
-        jd.icon("Star", { size: 28, color: "#f59e0b" }),
+        jd.lucide("House", { size: 28, color: "#3b82f6" }),
+        jd.lucide("Search", { size: 28, color: "#22c55e" }),
+        jd.lucide("Star", { size: 28, color: "#f59e0b" }),
       ],
     ),
   ],

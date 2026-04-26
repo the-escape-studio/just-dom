@@ -2,14 +2,14 @@
 /**
  * create-just-dom — Vite + just-dom scaffold
  *
- * Flags (optional; otherwise prompts when TTY):
+ * Flags (optional; otherwise prompts when TTY, in order: language, CSS, plugins):
  *   --ts | --js             Language template
  *   --plugins=<list>        Comma-separated plugins (router,signals,lucide)
  *   --no-plugins            Install no plugins
  *   --css=<option>          CSS framework: tailwind | tailwind-daisyui | none
  *   --no-css                No CSS framework (same as --css=none)
  *   --pnpm                  Use pnpm in the new project
- *   -y, --yes               Skip prompts (defaults: TypeScript, no plugins, no CSS)
+ *   -y, --yes               Skip prompts (TypeScript, no CSS, no plugins)
  *   -h, --help              Show help
  */
 import { spawnSync } from "node:child_process"
@@ -21,7 +21,6 @@ import {
   rmdirSync,
   writeFileSync,
 } from "node:fs"
-import { createInterface } from "node:readline/promises"
 import { stdin as input, stdout as output } from "node:process"
 import { join, resolve } from "node:path"
 
@@ -442,108 +441,78 @@ function installDevPackages(projectDir, usePnpm, pkgs) {
 // ─── Interactive UI ──────────────────────────────────────────────────────────
 
 /**
- * Two-section interactive select:
- *   - Plugins: multi-select (◇/◆, independently togglable)
- *   - CSS framework: radio (◯/●, mutually exclusive)
+ * Single-screen keynav: radio (◯/●) or multi-select (◇/◆).
+ * @param {{ title: string, hint: string, kind: "radio" | "multiselect", items: { id: string, label: string }[], defaultIndex?: number }} opts
+ * @returns {Promise<string | string[]>} Selected id (radio) or id[] (multiselect)
  */
-async function promptSelections() {
-  const pluginItems = OFFICIAL_PLUGINS.map((p) => ({
-    id: p.id,
-    label: p.label,
-    selected: false,
+async function promptKeynavScreen(opts) {
+  const { title, hint, kind, items, defaultIndex = 0 } = opts
+  const state = items.map((it, i) => ({
+    id: it.id,
+    label: it.label,
+    selected: kind === "radio" ? i === defaultIndex : false,
   }))
 
-  const cssItems = CSS_OPTIONS.map((o, i) => ({
-    id: o.id,
-    label: o.label,
-    selected: i === 0, // "none" pre-selected
-  }))
-
-  // Flat list of render slots (headers, spacers, and interactive items)
-  const renderSlots = [
-    { kind: "header", text: "Plugins" },
-    { kind: "item", group: "plugins", index: 0 },
-    { kind: "item", group: "plugins", index: 1 },
-    { kind: "item", group: "plugins", index: 2 },
-    { kind: "spacer" },
-    { kind: "header", text: "CSS framework" },
-    { kind: "item", group: "css", index: 0 },
-    { kind: "item", group: "css", index: 1 },
-    { kind: "item", group: "css", index: 2 },
-  ]
-
-  const groups = { plugins: pluginItems, css: cssItems }
-
-  // Navigable slots only (item slots), each carrying its renderSlots index
-  const navSlots = renderSlots
-    .map((s, i) => ({ ...s, slotIndex: i }))
-    .filter((s) => s.kind === "item")
-
-  let cursorNav = 0
+  let cursor = 0
   let firstRender = true
+  let lineCount = 0
 
   const RESET = "\x1b[0m"
   const BOLD = "\x1b[1m"
   const DIM = "\x1b[2m"
   const CYAN = "\x1b[36m"
 
-  function renderAll() {
-    if (!firstRender) {
-      process.stdout.write(`\x1b[${renderSlots.length}A`)
-    }
+  function render() {
+    if (!firstRender) process.stdout.write(`\x1b[${lineCount}A`)
     firstRender = false
-
-    const activeSlotIndex = navSlots[cursorNav].slotIndex
-
-    for (let i = 0; i < renderSlots.length; i++) {
-      const slot = renderSlots[i]
-      let line
-
-      if (slot.kind === "header") {
-        line = `  ${BOLD}${slot.text}${RESET}`
-      } else if (slot.kind === "spacer") {
-        line = ""
-      } else {
-        const item = groups[slot.group][slot.index]
-        const isActive = i === activeSlotIndex
-        const isRadio = slot.group === "css"
-        const check = isRadio
-          ? item.selected
-            ? "●"
-            : "◯"
-          : item.selected
-            ? "◆"
-            : "◇"
-        line = isActive
-          ? `  ${CYAN}${check} ${item.label}${RESET}`
-          : `  ${DIM}${check}${RESET} ${item.label}`
-      }
-
-      process.stdout.write(`\x1b[2K\r${line}\n`)
+    let n = 0
+    const line = (s) => {
+      process.stdout.write(`\x1b[2K\r${s}\n`)
+      n++
     }
+    line(`  ${BOLD}${title}${RESET}`)
+    line("")
+    line(`  ${DIM}${hint}${RESET}`)
+    line("")
+    for (let i = 0; i < state.length; i++) {
+      const item = state[i]
+      const isRadio = kind === "radio"
+      const check = isRadio
+        ? item.selected
+          ? "●"
+          : "◯"
+        : item.selected
+          ? "◆"
+          : "◇"
+      const isActive = i === cursor
+      const text = isActive
+        ? `  ${CYAN}${check} ${item.label}${RESET}`
+        : `  ${DIM}${check}${RESET} ${item.label}`
+      line(text)
+    }
+    lineCount = n
   }
 
   function toggle() {
-    const slot = navSlots[cursorNav]
-    const group = groups[slot.group]
-    const item = group[slot.index]
-    if (slot.group === "plugins") {
-      item.selected = !item.selected
-    } else {
-      for (const it of group) it.selected = false
+    const item = state[cursor]
+    if (kind === "radio") {
+      for (const it of state) it.selected = false
       item.selected = true
+    } else {
+      item.selected = !item.selected
     }
   }
 
-  process.stdout.write(
-    "\n  Select  (↑↓ navigate · space toggle · enter confirm):\n\n"
-  )
-  renderAll()
+  render()
 
   return new Promise((resolve, reject) => {
     if (typeof process.stdin.setRawMode !== "function") {
       process.stdout.write("\n")
-      resolve({ pluginIds: [], cssChoice: "none" })
+      if (kind === "radio") {
+        resolve(state[Math.min(defaultIndex, state.length - 1)]?.id ?? items[0].id)
+      } else {
+        resolve([])
+      }
       return
     }
 
@@ -567,20 +536,21 @@ async function promptSelections() {
       if (key === "\r" || key === "\n") {
         cleanup()
         process.stdout.write("\n")
-        resolve({
-          pluginIds: pluginItems.filter((i) => i.selected).map((i) => i.id),
-          cssChoice: cssItems.find((i) => i.selected)?.id ?? "none",
-        })
+        if (kind === "radio") {
+          resolve(state.find((s) => s.selected)?.id ?? state[0].id)
+        } else {
+          resolve(state.filter((s) => s.selected).map((s) => s.id))
+        }
         return
       }
       if (key === " ") {
         toggle()
       } else if (key === "\x1b[A") {
-        cursorNav = (cursorNav - 1 + navSlots.length) % navSlots.length
+        cursor = (cursor - 1 + state.length) % state.length
       } else if (key === "\x1b[B") {
-        cursorNav = (cursorNav + 1) % navSlots.length
+        cursor = (cursor + 1) % state.length
       }
-      renderAll()
+      render()
     }
 
     process.stdin.on("data", onKey)
@@ -597,30 +567,46 @@ async function resolveChoices(parsed) {
   const canPrompt = input.isTTY && output.isTTY && !parsed.yes
 
   if (canPrompt) {
-    if (useTypescript === undefined) {
-      console.log("\n  create-just-dom — a few choices (Enter = default)\n")
-      const rl = createInterface({ input, output })
-      try {
-        const a = (await rl.question("  Use TypeScript? [Y/n] "))
-          .trim()
-          .toLowerCase()
-        useTypescript =
-          !a || a === "y" || a === "yes" || a === "ts" || a === "typescript"
-      } finally {
-        rl.close()
-      }
+    const needLang = useTypescript === undefined
+    const needCss = cssChoice === undefined
+    const needPlugins = selectedPlugins === undefined
+    if (needLang || needCss || needPlugins) {
+      console.log("\n  create-just-dom — a few choices\n")
     }
-
-    // Show unified select if either plugins or css still needs prompting
-    if (selectedPlugins === undefined || cssChoice === undefined) {
-      let result
-      try {
-        result = await promptSelections()
-      } catch {
-        process.exit(1)
+    try {
+      if (needLang) {
+        const langId = await promptKeynavScreen({
+          title: "Language",
+          hint: "↑↓ navigate · space to select · enter confirm",
+          kind: "radio",
+          defaultIndex: 0,
+          items: [
+            { id: "typescript", label: "TypeScript (vanilla-ts template)" },
+            { id: "javascript", label: "JavaScript (vanilla template)" },
+          ],
+        })
+        useTypescript = langId === "typescript"
       }
-      if (selectedPlugins === undefined) selectedPlugins = result.pluginIds
-      if (cssChoice === undefined) cssChoice = result.cssChoice
+      if (needCss) {
+        cssChoice = await promptKeynavScreen({
+          title: "CSS framework",
+          hint: "↑↓ navigate · space to select · enter confirm",
+          kind: "radio",
+          defaultIndex: 0,
+          items: CSS_OPTIONS.map((o) => ({ id: o.id, label: o.label })),
+        })
+      }
+      if (needPlugins) {
+        selectedPlugins = await promptKeynavScreen({
+          title: "Plugins (optional)",
+          hint: "↑↓ navigate · space toggle · enter confirm",
+          kind: "multiselect",
+          items: OFFICIAL_PLUGINS.map((p) => ({ id: p.id, label: p.label })),
+        })
+      }
+    } catch (e) {
+      if (e instanceof Error && e.message === "Aborted.") process.exit(1)
+      throw e
     }
   }
 
@@ -680,7 +666,15 @@ async function main() {
   console.log(`\n  Creating Vite (${langLabel}) project "${projectName}"…\n`)
   run(
     "npm",
-    ["create", "vite@latest", projectName, "--", "--template", viteTemplate],
+    [
+      "create",
+      "vite@latest",
+      projectName,
+      "--",
+      "--template",
+      viteTemplate,
+      "--no-interactive",
+    ],
     { cwd }
   )
 

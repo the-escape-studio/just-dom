@@ -11,6 +11,9 @@
  *   --pnpm                  Use pnpm in the new project
  *   -y, --yes               Skip prompts (TypeScript, no CSS, no plugins)
  *   -h, --help              Show help
+ *
+ * Project name "." scaffolds into the invocation directory (must be empty). When started via
+ * `pnpm run` / `npm run`, that is INIT_CWD (where you ran the command), not the package root.
  */
 import { spawnSync } from "node:child_process"
 import {
@@ -19,10 +22,11 @@ import {
   readdirSync,
   rmSync,
   rmdirSync,
+  statSync,
   writeFileSync,
 } from "node:fs"
 import { stdin as input, stdout as output } from "node:process"
-import { join, resolve } from "node:path"
+import { basename, join, resolve } from "node:path"
 
 const OFFICIAL_PLUGINS = [
   {
@@ -65,7 +69,9 @@ function printHelp() {
 create-just-dom — New Vite project with just-dom and src/jd.config
 
 Usage:
-  npm create just-dom@latest [project-name] [options]
+  npm create just-dom@latest [project-name | .] [options]
+
+  Use "." as the project name to generate files in the current directory (folder must be empty).
 
 Options:
   --ts, --typescript     Use TypeScript (vanilla-ts template)
@@ -82,6 +88,7 @@ ${cssList}
 
 Examples:
   npm create just-dom@latest
+  npm create just-dom@latest .    # scaffold into the current directory (must be empty)
   npm create just-dom@latest my-app -- --js --no-plugins --no-css
   npm create just-dom@latest my-app -- --ts --plugins=router --css=tailwind-daisyui --pnpm
 `)
@@ -136,16 +143,58 @@ function parseArgs(argv) {
   }
 }
 
+/**
+ * Base directory for resolving project paths. `pnpm`/`npm run` set INIT_CWD to the shell
+ * directory where the user invoked the script; the Node process cwd is the package root.
+ */
+function getRunBaseDir() {
+  const init = process.env.INIT_CWD
+  if (init && typeof init === "string") {
+    const resolved = resolve(init)
+    try {
+      if (statSync(resolved).isDirectory()) return resolved
+    } catch {
+      // invalid or missing path
+    }
+  }
+  return process.cwd()
+}
+
 function assertValidProjectName(name) {
   if (!name || typeof name !== "string") {
     throw new Error("Invalid project name.")
   }
-  if (name === "." || name === "..") {
+  if (name === "..") {
     throw new Error(`Invalid project name: "${name}"`)
+  }
+  if (name === ".") {
+    return
   }
   if (!/^[a-zA-Z0-9._-]+$/.test(name)) {
     throw new Error(
       `Project name "${name}" contains invalid characters. Use letters, numbers, ".", "-", or "_".`
+    )
+  }
+}
+
+function assertScaffoldTargetDir(projectDir, projectName) {
+  if (projectName === ".") {
+    let entries
+    try {
+      entries = readdirSync(projectDir)
+    } catch {
+      throw new Error(`Cannot read directory: ${projectDir}`)
+    }
+    if (entries.length > 0) {
+      throw new Error(
+        `Cannot scaffold into ".": directory is not empty (${entries.length} item(s)). Use an empty folder or pass a subdirectory name.`
+      )
+    }
+    return
+  }
+  if (existsSync(projectDir)) {
+    throw new Error(
+      `Directory already exists: ${projectDir}\nChoose another name or remove the folder.`
     )
   }
 }
@@ -647,7 +696,7 @@ async function main() {
     return
   }
 
-  const cwd = process.cwd()
+  const cwd = getRunBaseDir()
   const { projectName, usePnpm } = parsed
   assertValidProjectName(projectName)
 
@@ -655,15 +704,15 @@ async function main() {
     await resolveChoices(parsed)
 
   const projectDir = resolve(cwd, projectName)
-  if (existsSync(projectDir)) {
-    throw new Error(
-      `Directory already exists: ${projectDir}\nChoose another name or remove the folder.`
-    )
-  }
+  assertScaffoldTargetDir(projectDir, projectName)
 
   const viteTemplate = useTypescript ? "vanilla-ts" : "vanilla"
   const langLabel = useTypescript ? "vanilla-ts" : "vanilla (JavaScript)"
-  console.log(`\n  Creating Vite (${langLabel}) project "${projectName}"…\n`)
+  const createLabel =
+    projectName === "."
+      ? `in current directory (${basename(projectDir)})`
+      : `"${projectName}"`
+  console.log(`\n  Creating Vite (${langLabel}) project ${createLabel}…\n`)
   run(
     "npm",
     [
@@ -734,7 +783,8 @@ async function main() {
     "utf8"
   )
 
-  patchIndexHtml(projectDir, projectName)
+  const htmlTitle = projectName === "." ? basename(projectDir) : projectName
+  patchIndexHtml(projectDir, htmlTitle)
 
   const parts = [useTypescript ? "TypeScript" : "JavaScript"]
   if (extraPkgs.length > 0) parts.push(`plugins: ${extraPkgs.join(", ")}`)
@@ -744,7 +794,9 @@ async function main() {
     parts.push(cssLabel)
   }
   console.log(`\n  Done. (${parts.join(" · ")})\n`)
-  console.log(`    cd ${projectName}`)
+  if (projectName !== ".") {
+    console.log(`    cd ${projectName}`)
+  }
   if (usePnpm) {
     console.log(
       "    pnpm install   # if the Vite template left the tree incomplete"

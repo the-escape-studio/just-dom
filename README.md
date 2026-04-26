@@ -23,7 +23,7 @@ pnpm install
 pnpm dev
 ```
 
-Scaffold a Vite app (with `jd.config`, optional plugins and CSS stack, TS or JS — prompts or flags) from this repo:
+Scaffold a Vite app (with `jd.config`, optional plugins and CSS stack, TS or JS — TTY prompts: language, then CSS, then plugins, or use flags) from this repo:
 
 ```bash
 pnpm create:app ../path/to/my-app

@@ -13,13 +13,14 @@ Use the **`create-just-dom`** CLI to generate a **Vite** app with `jd.config` an
 ```bash
 npm create just-dom@latest
 npm create just-dom@latest my-app
+npm create just-dom@latest .   # current directory (must be empty)
 ```
 
-In an interactive terminal you will be asked:
+In an interactive terminal you get **three** prompts in this order (keyboard: **↑/↓**, **Space**, **Enter**):
 
 1. **TypeScript or JavaScript** (default: TypeScript)
-2. **Plugins** (multi-select): `@just-dom/router`, `@just-dom/signals`, `@just-dom/lucide` — all optional
-3. **CSS framework** (one of): **none**, **Tailwind CSS v4**, or **Tailwind v4 + DaisyUI**
+2. **CSS framework** (one of): **none**, **Tailwind CSS v4**, or **Tailwind v4 + DaisyUI**
+3. **Plugins** (multi-select): `@just-dom/router`, `@just-dom/signals`, `@just-dom/lucide` — all optional
 
 Non-interactive / CI: pass **`--yes`** to skip prompts (defaults: **TypeScript**, **no plugins**, **no CSS framework**), or set each option explicitly:
 
@@ -49,7 +50,7 @@ From this monorepo while developing the CLI:
 pnpm create:app ../path/to/my-app
 ```
 
-The tool always invokes **`npm create vite`**. Choosing Tailwind updates **`vite.config`**, **`src/style.css`**, and the starter **`main`** markup accordingly. Unknown **`--plugins`** or **`--css`** values are ignored with a warning (see terminal output).
+The tool invokes **`npm create vite@latest`** with **`--no-interactive`** so Vite does not prompt during scaffolding. Choosing Tailwind updates **`vite.config`**, **`src/style.css`**, and the starter **`main`** markup accordingly. Unknown **`--plugins`** or **`--css`** values are ignored with a warning (see terminal output).
 
 ## `jd.config.ts`
 

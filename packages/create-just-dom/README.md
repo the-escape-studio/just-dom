@@ -9,9 +9,10 @@ Full documentation: **[App setup → Start a new project](https://just-dom.verce
 ```bash
 npm create just-dom@latest
 npm create just-dom@latest my-app
+npm create just-dom@latest .   # scaffold into the current directory (must be empty)
 ```
 
-**Interactive** (default in a TTY): you choose **TypeScript vs JavaScript**, then a **multi-select** for plugins and a **CSS framework** (radio: none, Tailwind v4, or Tailwind + DaisyUI).
+**Interactive** (default in a TTY): three **separate** keyboard-driven screens, in order: **Language** (TypeScript vs JavaScript) → **CSS framework** (none, Tailwind v4, or Tailwind + DaisyUI) → **Plugins** (multi-select, all optional). Use **↑/↓** to move, **Space** to toggle or pick, **Enter** to confirm.
 
 **Non-interactive** (CI or scripts): use **`--yes`** or pass explicit flags:
 
@@ -43,7 +44,7 @@ npm run dev
 
 With **`--css=tailwind`** or **`tailwind-daisyui`**, the CLI adds **`tailwindcss`**, **`@tailwindcss/vite`**, wires **`vite.config`**, and generates a starter **`style.css`** using Tailwind v4 (`@import "tailwindcss"`). DaisyUI adds the `@plugin "daisyui/index.js"` line.
 
-If **stdin is not a TTY** and you did not pass plugin/CSS flags, selections fall back to **no plugins** and **no CSS framework**.
+If **stdin is not a TTY** and you omit flags, defaults are **TypeScript**, **no plugins**, and **no CSS framework**.
 
 ## Monorepo development
 
@@ -52,6 +53,8 @@ From the `just-dom` repository root:
 ```bash
 pnpm create:app ../path/to/my-app
 ```
+
+From any directory (including an empty folder under `examples/…`), `pnpm create:app` uses your **current shell directory** for `.` and for relative names—thanks to `INIT_CWD`—not only the repo root.
 
 ## License
 

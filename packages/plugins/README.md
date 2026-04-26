@@ -16,11 +16,11 @@ End users typically:
 1. Register plugins once in **[`jd.config.ts`](https://just-dom.vercel.app/docs/jd-config)** (single `withPlugins` + `export const jd`).
 2. Import `jd` from that module in **`main.ts`** and in UI modules.
 
-Scaffold a **Vite + TypeScript** starter (includes `jd.config.ts` and optional `@just-dom/router` when published):
+Scaffold a **Vite** starter with `jd.config` and optional **`@just-dom/*` packages** (e.g. router) plus optional **Tailwind / DaisyUI**:
 
 ```bash
 npm create just-dom@latest my-app
-# optional: --js --no-router --pnpm --yes  (see docs)
+# optional: --js --plugins=router,lucide --css=tailwind --pnpm --yes  (see docs)
 ```
 
 From the monorepo root: `pnpm create:app ../path/to/my-app`.

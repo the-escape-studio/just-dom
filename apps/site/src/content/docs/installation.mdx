@@ -6,14 +6,14 @@ icon: Download
 
 ## New Vite project CLI
 
-The fastest way to try Just DOM in a real app is **`create-just-dom`**: it runs **Vite**, adds **`just-dom`**, writes **`jd.config`**, and optionally **`@just-dom/router`**.
+The fastest way to try Just DOM in a real app is **`create-just-dom`**: it runs **Vite**, adds **`just-dom`**, writes **`jd.config`**, and optionally installs **`@just-dom/router`**, **`@just-dom/signals`**, **`@just-dom/lucide`**, plus an optional **CSS stack** (none, **Tailwind CSS v4**, or **Tailwind + DaisyUI**).
 
 ```bash
 npm create just-dom@latest
 npm create just-dom@latest my-app
 ```
 
-You will be asked for **TypeScript vs JavaScript** and **with or without the router** (defaults: TS + router). For scripts and non-interactive use, see flags on **[Start a new project](/docs/jd-config#start-a-new-project)** (`npm create just-dom@latest -- --help`).
+Interactively you choose **language**, **plugins** (any combination), and **CSS**. **`--yes`** skips prompts with defaults: **TypeScript**, no plugins, no CSS framework. For scripts and CI, see flags on **[Start a new project](/docs/jd-config#start-a-new-project)** (`npm create just-dom@latest -- --help`).
 
 ---
 

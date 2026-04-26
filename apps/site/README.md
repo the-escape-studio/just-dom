@@ -7,7 +7,7 @@ Next.js + [Fumadocs](https://fumadocs.dev) app: documentation, API reference, an
 
 The site consumes workspace packages `just-dom`, `@just-dom/lucide`, `@just-dom/router`, and `@workspace/ui` for examples and the playground. Playground code lives under `src/views/playground/`.
 
-End-user guides cover **[App setup (jd.config)](https://just-dom.vercel.app/docs/jd-config)** and the **`create-just-dom`** scaffold (`npm create just-dom@latest`); the CLI package lives at `packages/create-just-dom` in this monorepo.
+End-user guides cover **[App setup (jd.config)](https://just-dom.vercel.app/docs/jd-config)** and the **`create-just-dom`** scaffold (`npm create just-dom@latest` — plugins, Tailwind/DaisyUI, TS/JS); the CLI package lives at `packages/create-just-dom` in this monorepo.
 
 ### Playground types
 

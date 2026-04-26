@@ -30,13 +30,13 @@ createRoot("app", app);
 
 Use [`withPlugins`](https://just-dom.vercel.app/docs/plugin-api/with-plugins) to attach official or custom plugins. In apps, the usual pattern is a single module (**[`jd.config.ts`](https://just-dom.vercel.app/docs/jd-config)**) that exports `jd` for the whole project.
 
-## New project (Vite + TypeScript)
+## New project (Vite)
 
 ```bash
 npm create just-dom@latest my-app
 ```
 
-See [`create-just-dom`](https://www.npmjs.com/package/create-just-dom) on npm and the [App setup / CLI](https://just-dom.vercel.app/docs/jd-config#start-a-new-project) docs.
+The CLI scaffolds **`jd.config`**, optional **`@just-dom/*` plugins**, and optional **Tailwind / DaisyUI**. See [`create-just-dom`](https://www.npmjs.com/package/create-just-dom) on npm and the [App setup / CLI](https://just-dom.vercel.app/docs/jd-config#start-a-new-project) docs.
 
 ## Official plugins
 

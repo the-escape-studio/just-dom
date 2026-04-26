@@ -3,13 +3,16 @@
  * create-just-dom — Vite + just-dom scaffold
  *
  * Flags (optional; otherwise prompts when TTY):
- *   --ts | --js          Language template
- *   --router | --no-router   Install @just-dom/router
- *   --pnpm               Use pnpm in the new project
- *   -y, --yes            Skip prompts (defaults: TypeScript + router)
- *   -h, --help           Show help
+ *   --ts | --js             Language template
+ *   --plugins=<list>        Comma-separated plugins (router,signals,lucide)
+ *   --no-plugins            Install no plugins
+ *   --css=<option>          CSS framework: tailwind | tailwind-daisyui | none
+ *   --no-css                No CSS framework (same as --css=none)
+ *   --pnpm                  Use pnpm in the new project
+ *   -y, --yes               Skip prompts (defaults: TypeScript, no plugins, no CSS)
+ *   -h, --help              Show help
  */
-import { spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process"
 import {
   existsSync,
   readFileSync,
@@ -17,12 +20,48 @@ import {
   rmSync,
   rmdirSync,
   writeFileSync,
-} from "node:fs";
-import { createInterface } from "node:readline/promises";
-import { stdin as input, stdout as output } from "node:process";
-import { join, resolve } from "node:path";
+} from "node:fs"
+import { createInterface } from "node:readline/promises"
+import { stdin as input, stdout as output } from "node:process"
+import { join, resolve } from "node:path"
+
+const OFFICIAL_PLUGINS = [
+  {
+    id: "router",
+    pkg: "@just-dom/router",
+    label: "@just-dom/router   — client-side SPA navigation",
+    importLine: `import { createRouterPlugin } from "@just-dom/router";`,
+    setupLine: `const router = createRouterPlugin();`,
+    pluginVar: "router",
+  },
+  {
+    id: "signals",
+    pkg: "@just-dom/signals",
+    label: "@just-dom/signals  — fine-grained reactive state",
+    importLine: null,
+    setupLine: null,
+    pluginVar: null,
+    configNote: `// @just-dom/signals — import { createSignal, reactive, effect, computed } where needed`,
+  },
+  {
+    id: "lucide",
+    pkg: "@just-dom/lucide",
+    label: "@just-dom/lucide   — Lucide icons integration",
+    importLine: `import { lucidePlugin } from "@just-dom/lucide";`,
+    setupLine: null,
+    pluginVar: "lucidePlugin",
+  },
+]
+
+const CSS_OPTIONS = [
+  { id: "none", label: "none" },
+  { id: "tailwind", label: "tailwindcss v4" },
+  { id: "tailwind-daisyui", label: "tailwindcss v4 + daisyui" },
+]
 
 function printHelp() {
+  const pluginList = OFFICIAL_PLUGINS.map((p) => `    ${p.id}`).join("\n")
+  const cssList = CSS_OPTIONS.map((o) => `    ${o.id}`).join("\n")
   console.log(`
 create-just-dom — New Vite project with just-dom and src/jd.config
 
@@ -32,254 +71,201 @@ Usage:
 Options:
   --ts, --typescript     Use TypeScript (vanilla-ts template)
   --js, --javascript     Use JavaScript (vanilla template)
-  --router               Install @just-dom/router and add a starter route table
-  --no-router            Only install just-dom (no router package)
-  --pnpm                 Use pnpm add inside the new folder (default: npm)
-  -y, --yes              Non-interactive: TypeScript + try router (no prompts)
+  --plugins=<list>       Comma-separated plugins to install:
+${pluginList}
+  --no-plugins           Install no plugins
+  --css=<option>         CSS framework:
+${cssList}
+  --no-css               No CSS framework
+  --pnpm                 Use pnpm inside the new folder (default: npm)
+  -y, --yes              Non-interactive: TypeScript, no plugins, no CSS
   -h, --help             Show this help
 
 Examples:
   npm create just-dom@latest
-  npm create just-dom@latest my-app -- --js --no-router
-  npm create just-dom@latest my-app -- --ts --router --pnpm
-`);
+  npm create just-dom@latest my-app -- --js --no-plugins --no-css
+  npm create just-dom@latest my-app -- --ts --plugins=router --css=tailwind-daisyui --pnpm
+`)
 }
 
 function parseArgs(argv) {
-  const rest = argv.slice(2);
-  let usePnpm = false;
-  let useTypescript = undefined;
-  let wantRouter = undefined;
-  let yes = false;
-  let help = false;
-  const positional = [];
+  const rest = argv.slice(2)
+  let usePnpm = false
+  let useTypescript = undefined
+  let selectedPlugins = undefined
+  let cssChoice = undefined
+  let yes = false
+  let help = false
+  const positional = []
   for (const a of rest) {
     if (a === "--pnpm") {
-      usePnpm = true;
+      usePnpm = true
     } else if (a === "--ts" || a === "--typescript") {
-      useTypescript = true;
+      useTypescript = true
     } else if (a === "--js" || a === "--javascript") {
-      useTypescript = false;
-    } else if (a === "--router") {
-      wantRouter = true;
-    } else if (a === "--no-router") {
-      wantRouter = false;
+      useTypescript = false
+    } else if (a.startsWith("--plugins=")) {
+      const val = a.slice("--plugins=".length)
+      selectedPlugins = val
+        ? val
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : []
+    } else if (a === "--no-plugins") {
+      selectedPlugins = []
+    } else if (a.startsWith("--css=")) {
+      cssChoice = a.slice("--css=".length)
+    } else if (a === "--no-css") {
+      cssChoice = "none"
     } else if (a === "-y" || a === "--yes") {
-      yes = true;
+      yes = true
     } else if (a === "-h" || a === "--help") {
-      help = true;
+      help = true
     } else if (!a.startsWith("-")) {
-      positional.push(a);
+      positional.push(a)
     }
   }
   return {
     projectName: positional[0] ?? "just-dom-app",
     usePnpm,
     useTypescript,
-    wantRouter,
+    selectedPlugins,
+    cssChoice,
     yes,
     help,
-  };
+  }
 }
 
 function assertValidProjectName(name) {
   if (!name || typeof name !== "string") {
-    throw new Error("Invalid project name.");
+    throw new Error("Invalid project name.")
   }
   if (name === "." || name === "..") {
-    throw new Error(`Invalid project name: "${name}"`);
+    throw new Error(`Invalid project name: "${name}"`)
   }
   if (!/^[a-zA-Z0-9._-]+$/.test(name)) {
     throw new Error(
-      `Project name "${name}" contains invalid characters. Use letters, numbers, ".", "-", or "_".`,
-    );
+      `Project name "${name}" contains invalid characters. Use letters, numbers, ".", "-", or "_".`
+    )
   }
 }
 
 function patchIndexHtml(projectDir, title) {
-  const indexPath = join(projectDir, "index.html");
-  if (!existsSync(indexPath)) {
-    return;
-  }
-  let html = readFileSync(indexPath, "utf8");
+  const indexPath = join(projectDir, "index.html")
+  if (!existsSync(indexPath)) return
+  let html = readFileSync(indexPath, "utf8")
   html = html.replace(
     /<title>[^<]*<\/title>/,
-    `<title>${title.replace(/</g, "")}<\/title>`,
-  );
-  writeFileSync(indexPath, html, "utf8");
+    `<title>${title.replace(/</g, "")}<\/title>`
+  )
+  writeFileSync(indexPath, html, "utf8")
 }
 
 function removeStarterFiles(projectDir, useTypescript) {
-  const src = join(projectDir, "src");
-  const counter = useTypescript ? "counter.ts" : "counter.js";
+  const src = join(projectDir, "src")
+  const counter = useTypescript ? "counter.ts" : "counter.js"
   const paths = [
     join(src, counter),
     join(src, "assets", "vite.svg"),
     join(src, "assets", useTypescript ? "typescript.svg" : "javascript.svg"),
     join(src, "assets", "hero.png"),
-  ];
+  ]
   for (const p of paths) {
-    if (existsSync(p)) {
-      rmSync(p);
-    }
+    if (existsSync(p)) rmSync(p)
   }
-  const assetsDir = join(src, "assets");
+  const assetsDir = join(src, "assets")
   if (existsSync(assetsDir)) {
     try {
-      if (readdirSync(assetsDir).length === 0) {
-        rmdirSync(assetsDir);
-      }
+      if (readdirSync(assetsDir).length === 0) rmdirSync(assetsDir)
     } catch {
       // ignore
     }
   }
 }
 
-const JD_CONFIG_WITH_ROUTER_TS = `import DOM, { withPlugins } from "just-dom";
-import { createRouterPlugin } from "@just-dom/router";
+// ─── jd.config ──────────────────────────────────────────────────────────────
 
-export const router = createRouterPlugin();
-export const jd = withPlugins(DOM, [router]);
+function buildJdConfig(selectedIds, useTypescript) {
+  const plugins = OFFICIAL_PLUGINS.filter((p) => selectedIds.includes(p.id))
+  const withPluginsItems = plugins.filter((p) => p.pluginVar !== null)
+  const signalsPlugin = plugins.find((p) => p.id === "signals")
 
-export type Jd = typeof jd;
-`;
+  const lines = []
 
-const JD_CONFIG_WITH_ROUTER_JS = `import DOM, { withPlugins } from "just-dom";
-import { createRouterPlugin } from "@just-dom/router";
+  lines.push(`import DOM, { withPlugins } from "just-dom";`)
+  for (const p of withPluginsItems) lines.push(p.importLine)
+  lines.push("")
 
-export const router = createRouterPlugin();
-export const jd = withPlugins(DOM, [router]);
-`;
+  if (plugins.length === 0) {
+    lines.push("/**")
+    lines.push(
+      " * Central app DOM — add official plugins (e.g. `@just-dom/router`) here."
+    )
+    lines.push(" * @see https://just-dom.vercel.app/docs/jd-config")
+    lines.push(" */")
+  }
 
-const JD_CONFIG_BASE_TS = `import DOM, { withPlugins } from "just-dom";
+  const setupLines = withPluginsItems.filter((p) => p.setupLine)
+  for (const p of setupLines) lines.push(p.setupLine)
+  if (setupLines.length > 0) lines.push("")
 
-/**
- * Central app DOM — add official plugins (e.g. \`@just-dom/router\`) here.
- * @see https://just-dom.vercel.app/docs/jd-config
- */
-export const jd = withPlugins(DOM, []);
+  if (signalsPlugin) {
+    lines.push(signalsPlugin.configNote)
+    lines.push("")
+  }
 
-export type Jd = typeof jd;
-`;
+  const pluginVars = withPluginsItems.map((p) => p.pluginVar).join(", ")
+  lines.push(`export const jd = withPlugins(DOM, [${pluginVars}]);`)
 
-const JD_CONFIG_BASE_JS = `import DOM, { withPlugins } from "just-dom";
+  if (useTypescript) {
+    lines.push("")
+    lines.push(`export type Jd = typeof jd;`)
+  }
 
-/**
- * Central app DOM — add official plugins (e.g. \`@just-dom/router\`) here.
- * @see https://just-dom.vercel.app/docs/jd-config
- */
-export const jd = withPlugins(DOM, []);
-`;
-
-function mainTsWithRouter(cfgExt) {
-  const cfg = `jd.config.${cfgExt}`;
-  const cfgImport = cfgExt === "ts" ? "./jd.config" : "./jd.config.js";
-  return `import "./style.css";
-import { createRoot } from "just-dom";
-import { defineRoutes } from "@just-dom/router";
-import { jd } from "${cfgImport}";
-
-const routes = defineRoutes([
-  {
-    layout: ({ outlet }) =>
-      jd.div({ className: "page" }, [
-        jd.nav({ className: "nav" }, [
-          jd.routerLink({ href: "/" }, ["Home"]),
-          jd.routerLink({ href: "/about" }, ["About"]),
-        ]),
-        outlet,
-      ]),
-    children: [
-      {
-        index: true,
-        element: () =>
-          jd.main({}, [
-            jd.h1({}, ["Vite + Just DOM"]),
-            jd.p({}, [
-              "Edit ",
-              jd.code({}, ["src/main.${cfgExt}"]),
-              " for routes and ",
-              jd.code({}, ["src/${cfg}"]),
-              " for plugins.",
-            ]),
-          ]),
-      },
-      {
-        path: "about",
-        element: () =>
-          jd.main({}, [
-            jd.h1({}, ["About"]),
-            jd.p({}, ["This page lives in the same route table as Home."]),
-          ]),
-      },
-      {
-        path: "*",
-        element: () => jd.main({}, [jd.h1({}, ["Not found"])]),
-      },
-    ],
-  },
-]);
-
-createRoot("app", jd.div({ className: "root" }, [jd.router(routes)]));
-`;
+  return lines.join("\n") + "\n"
 }
 
-function mainJsWithRouter(cfgExt) {
-  const cfg = `jd.config.${cfgExt}`;
-  const cfgImport = "./jd.config.js";
-  return `import "./style.css";
+// ─── File templates ──────────────────────────────────────────────────────────
+
+const VITE_CONFIG = `import { defineConfig } from "vite";
+import tailwindcss from "@tailwindcss/vite";
+
+export default defineConfig({
+  plugins: [tailwindcss()],
+});
+`
+
+function mainTs(cfgExt, cssChoice) {
+  const cfgImport = cfgExt === "ts" ? "./jd.config" : "./jd.config.js"
+  const withTailwind =
+    cssChoice === "tailwind" || cssChoice === "tailwind-daisyui"
+  const daisyButtonLine =
+    cssChoice === "tailwind-daisyui"
+      ? `      jd.button({ className: "btn btn-primary mt-4" }, ["Click me"]),\n`
+      : ""
+  if (withTailwind) {
+    return `import "./style.css";
 import { createRoot } from "just-dom";
-import { defineRoutes } from "@just-dom/router";
 import { jd } from "${cfgImport}";
 
-const routes = defineRoutes([
-  {
-    layout: ({ outlet }) =>
-      jd.div({ className: "page" }, [
-        jd.nav({ className: "nav" }, [
-          jd.routerLink({ href: "/" }, ["Home"]),
-          jd.routerLink({ href: "/about" }, ["About"]),
-        ]),
-        outlet,
+createRoot(
+  "app",
+  jd.div({ className: "min-h-screen bg-gray-50 font-sans" }, [
+    jd.div({ className: "max-w-2xl mx-auto px-6 py-8" }, [
+      jd.h1({ className: "text-3xl font-bold text-gray-900 mb-3" }, ["Vite + Just DOM"]),
+      jd.p({ className: "text-gray-600 leading-relaxed" }, [
+        "Edit ",
+        jd.code({ className: "bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-sm font-mono" }, ["src/main.${cfgExt}"]),
+        " to get started. Add plugins in ",
+        jd.code({ className: "bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-sm font-mono" }, ["src/jd.config.${cfgExt}"]),
+        ".",
       ]),
-    children: [
-      {
-        index: true,
-        element: () =>
-          jd.main({}, [
-            jd.h1({}, ["Vite + Just DOM"]),
-            jd.p({}, [
-              "Edit ",
-              jd.code({}, ["src/main.js"]),
-              " and ",
-              jd.code({}, ["src/${cfg}"]),
-              ".",
-            ]),
-          ]),
-      },
-      {
-        path: "about",
-        element: () =>
-          jd.main({}, [
-            jd.h1({}, ["About"]),
-            jd.p({}, ["Same route table as Home."]),
-          ]),
-      },
-      {
-        path: "*",
-        element: () => jd.main({}, [jd.h1({}, ["Not found"])]),
-      },
-    ],
-  },
-]);
-
-createRoot("app", jd.div({ className: "root" }, [jd.router(routes)]));
-`;
-}
-
-function mainTsBase(cfgExt) {
-  const cfg = `jd.config.${cfgExt}`;
-  const cfgImport = cfgExt === "ts" ? "./jd.config" : "./jd.config.js";
+${daisyButtonLine}    ]),
+  ]),
+);
+`
+  }
   return `import "./style.css";
 import { createRoot } from "just-dom";
 import { jd } from "${cfgImport}";
@@ -289,51 +275,74 @@ createRoot(
   jd.div({ className: "page" }, [
     jd.h1({}, ["Vite + Just DOM"]),
     jd.p({}, [
-      "Configure plugins in ",
-      jd.code({}, ["src/${cfg}"]),
-      ". Add ",
-      jd.code({}, ["@just-dom/router"]),
-      " and follow ",
-      jd.a(
-        { href: "https://just-dom.vercel.app/docs/official-plugins/router", target: "_blank" },
-        ["the router docs"],
-      ),
+      "Edit ",
+      jd.code({}, ["src/main.${cfgExt}"]),
+      " to get started. Add plugins in ",
+      jd.code({}, ["src/jd.config.${cfgExt}"]),
       ".",
     ]),
   ]),
 );
-`;
+`
 }
 
-function mainJsBase(cfgExt) {
-  const cfg = `jd.config.${cfgExt}`;
-  const cfgImport = "./jd.config.js";
+function mainJs(cssChoice) {
+  const withTailwind =
+    cssChoice === "tailwind" || cssChoice === "tailwind-daisyui"
+  const daisyButtonLine =
+    cssChoice === "tailwind-daisyui"
+      ? `      jd.button({ className: "btn btn-primary mt-4" }, ["Click me"]),\n`
+      : ""
+  if (withTailwind) {
+    return `import "./style.css";
+import { createRoot } from "just-dom";
+import { jd } from "./jd.config.js";
+
+createRoot(
+  "app",
+  jd.div({ className: "min-h-screen bg-gray-50 font-sans" }, [
+    jd.div({ className: "max-w-2xl mx-auto px-6 py-8" }, [
+      jd.h1({ className: "text-3xl font-bold text-gray-900 mb-3" }, ["Vite + Just DOM"]),
+      jd.p({ className: "text-gray-600 leading-relaxed" }, [
+        "Edit ",
+        jd.code({ className: "bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-sm font-mono" }, ["src/main.js"]),
+        " to get started. Add plugins in ",
+        jd.code({ className: "bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-sm font-mono" }, ["src/jd.config.js"]),
+        ".",
+      ]),
+${daisyButtonLine}    ]),
+  ]),
+);
+`
+  }
   return `import "./style.css";
 import { createRoot } from "just-dom";
-import { jd } from "${cfgImport}";
+import { jd } from "./jd.config.js";
 
 createRoot(
   "app",
   jd.div({ className: "page" }, [
     jd.h1({}, ["Vite + Just DOM"]),
     jd.p({}, [
-      "Configure plugins in ",
-      jd.code({}, ["src/${cfg}"]),
-      ". Add ",
-      jd.code({}, ["@just-dom/router"]),
-      " from the docs: ",
-      jd.a(
-        { href: "https://just-dom.vercel.app/docs/official-plugins/router", target: "_blank" },
-        ["Router plugin"],
-      ),
+      "Edit ",
+      jd.code({}, ["src/main.js"]),
+      " to get started. Add plugins in ",
+      jd.code({}, ["src/jd.config.js"]),
       ".",
     ]),
   ]),
 );
-`;
+`
 }
 
-const STYLE_CSS = `:root {
+function buildStyleCss(cssChoice) {
+  if (cssChoice === "tailwind") {
+    return `@import "tailwindcss";\n`
+  }
+  if (cssChoice === "tailwind-daisyui") {
+    return `@import "tailwindcss";\n@plugin "daisyui/index.js";\n`
+  }
+  return `:root {
   font-family: system-ui, -apple-system, sans-serif;
   line-height: 1.5;
   color: #111827;
@@ -353,40 +362,38 @@ body {
   margin: 0 auto;
   padding: 1.5rem;
 }
-
-.nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 1.25rem;
+`
 }
 
-.nav a {
-  color: #2563eb;
-  text-decoration: none;
-}
+function readme({ selectedPlugins, cssChoice, useTypescript }) {
+  const mainFile = useTypescript ? "src/main.ts" : "src/main.js"
+  const cfgFile = useTypescript ? "src/jd.config.ts" : "src/jd.config.js"
+  const lang = useTypescript ? "TypeScript" : "JavaScript"
 
-.nav a:hover {
-  text-decoration: underline;
-}
-`;
+  const pluginLines =
+    selectedPlugins.length === 0
+      ? "- **Plugins:** none — browse [official plugins](https://just-dom.vercel.app/docs/official-plugins) when you need them"
+      : selectedPlugins
+          .map((id) => {
+            const p = OFFICIAL_PLUGINS.find((x) => x.id === id)
+            return `- **${p.pkg}:** installed`
+          })
+          .join("\n")
 
-function readme({ withRouter, useTypescript }) {
-  const mainFile = useTypescript ? "src/main.ts" : "src/main.js";
-  const cfgFile = useTypescript ? "src/jd.config.ts" : "src/jd.config.js";
-  const routerNote = withRouter
-    ? "- **Router:** included — see `" +
-      mainFile +
-      "` and `@just-dom/router`"
-    : "- **Router:** not installed — add `@just-dom/router` when you need it ([docs](https://just-dom.vercel.app/docs/official-plugins/router))";
-  const lang = useTypescript ? "TypeScript" : "JavaScript";
+  const cssLine =
+    cssChoice === "tailwind"
+      ? "- **Tailwind CSS v4:** installed (`@tailwindcss/vite` Vite plugin)"
+      : cssChoice === "tailwind-daisyui"
+        ? "- **Tailwind CSS v4 + DaisyUI:** installed"
+        : ""
+
   return `# Vite + Just DOM (${lang})
 
 Created with [\`create-just-dom\`](https://www.npmjs.com/package/create-just-dom).
 
 - **Docs:** [just-dom.vercel.app](https://just-dom.vercel.app)
-- **App module:** \`${cfgFile}\` — add plugins with \`withPlugins\` here
-${routerNote}
+- **App module:** \`${cfgFile}\` — plugins configured here
+${pluginLines}${cssLine ? "\n" + cssLine : ""}
 - **Entry:** \`${mainFile}\`
 
 ## Scripts
@@ -396,173 +403,368 @@ npm run dev
 npm run build
 npm run preview
 \`\`\`
-`;
+`
 }
+
+// ─── Install helpers ─────────────────────────────────────────────────────────
 
 function run(cmd, args, options) {
   const result = spawnSync(cmd, args, {
     stdio: "inherit",
     shell: process.platform === "win32",
     ...options,
-  });
-  if (result.error) {
-    throw result.error;
-  }
+  })
+  if (result.error) throw result.error
   if (result.status !== 0) {
-    throw new Error(`Command failed: ${cmd} ${args.join(" ")} (exit ${result.status})`);
+    throw new Error(
+      `Command failed: ${cmd} ${args.join(" ")} (exit ${result.status})`
+    )
   }
 }
 
-function tryInstallRouterDeps(projectDir, usePnpm) {
+function installPackages(projectDir, usePnpm, extra = []) {
+  const pkgs = ["just-dom", ...extra]
   if (usePnpm) {
-    const r = spawnSync("pnpm", ["add", "just-dom", "@just-dom/router"], {
-      cwd: projectDir,
-      stdio: "inherit",
-      shell: process.platform === "win32",
-    });
-    return r.status === 0;
-  }
-  const r = spawnSync("npm", ["install", "just-dom", "@just-dom/router"], {
-    cwd: projectDir,
-    stdio: "inherit",
-    shell: process.platform === "win32",
-  });
-  return r.status === 0;
-}
-
-function installJustDomOnly(projectDir, usePnpm) {
-  if (usePnpm) {
-    run("pnpm", ["add", "just-dom"], { cwd: projectDir });
+    run("pnpm", ["add", ...pkgs], { cwd: projectDir })
   } else {
-    run("npm", ["install", "just-dom"], { cwd: projectDir });
+    run("npm", ["install", ...pkgs], { cwd: projectDir })
   }
 }
+
+function installDevPackages(projectDir, usePnpm, pkgs) {
+  if (usePnpm) {
+    run("pnpm", ["add", "-D", ...pkgs], { cwd: projectDir })
+  } else {
+    run("npm", ["install", "--save-dev", ...pkgs], { cwd: projectDir })
+  }
+}
+
+// ─── Interactive UI ──────────────────────────────────────────────────────────
+
+/**
+ * Two-section interactive select:
+ *   - Plugins: multi-select (◇/◆, independently togglable)
+ *   - CSS framework: radio (◯/●, mutually exclusive)
+ */
+async function promptSelections() {
+  const pluginItems = OFFICIAL_PLUGINS.map((p) => ({
+    id: p.id,
+    label: p.label,
+    selected: false,
+  }))
+
+  const cssItems = CSS_OPTIONS.map((o, i) => ({
+    id: o.id,
+    label: o.label,
+    selected: i === 0, // "none" pre-selected
+  }))
+
+  // Flat list of render slots (headers, spacers, and interactive items)
+  const renderSlots = [
+    { kind: "header", text: "Plugins" },
+    { kind: "item", group: "plugins", index: 0 },
+    { kind: "item", group: "plugins", index: 1 },
+    { kind: "item", group: "plugins", index: 2 },
+    { kind: "spacer" },
+    { kind: "header", text: "CSS framework" },
+    { kind: "item", group: "css", index: 0 },
+    { kind: "item", group: "css", index: 1 },
+    { kind: "item", group: "css", index: 2 },
+  ]
+
+  const groups = { plugins: pluginItems, css: cssItems }
+
+  // Navigable slots only (item slots), each carrying its renderSlots index
+  const navSlots = renderSlots
+    .map((s, i) => ({ ...s, slotIndex: i }))
+    .filter((s) => s.kind === "item")
+
+  let cursorNav = 0
+  let firstRender = true
+
+  const RESET = "\x1b[0m"
+  const BOLD = "\x1b[1m"
+  const DIM = "\x1b[2m"
+  const CYAN = "\x1b[36m"
+
+  function renderAll() {
+    if (!firstRender) {
+      process.stdout.write(`\x1b[${renderSlots.length}A`)
+    }
+    firstRender = false
+
+    const activeSlotIndex = navSlots[cursorNav].slotIndex
+
+    for (let i = 0; i < renderSlots.length; i++) {
+      const slot = renderSlots[i]
+      let line
+
+      if (slot.kind === "header") {
+        line = `  ${BOLD}${slot.text}${RESET}`
+      } else if (slot.kind === "spacer") {
+        line = ""
+      } else {
+        const item = groups[slot.group][slot.index]
+        const isActive = i === activeSlotIndex
+        const isRadio = slot.group === "css"
+        const check = isRadio
+          ? item.selected
+            ? "●"
+            : "◯"
+          : item.selected
+            ? "◆"
+            : "◇"
+        line = isActive
+          ? `  ${CYAN}${check} ${item.label}${RESET}`
+          : `  ${DIM}${check}${RESET} ${item.label}`
+      }
+
+      process.stdout.write(`\x1b[2K\r${line}\n`)
+    }
+  }
+
+  function toggle() {
+    const slot = navSlots[cursorNav]
+    const group = groups[slot.group]
+    const item = group[slot.index]
+    if (slot.group === "plugins") {
+      item.selected = !item.selected
+    } else {
+      for (const it of group) it.selected = false
+      item.selected = true
+    }
+  }
+
+  process.stdout.write(
+    "\n  Select  (↑↓ navigate · space toggle · enter confirm):\n\n"
+  )
+  renderAll()
+
+  return new Promise((resolve, reject) => {
+    if (typeof process.stdin.setRawMode !== "function") {
+      process.stdout.write("\n")
+      resolve({ pluginIds: [], cssChoice: "none" })
+      return
+    }
+
+    process.stdin.setRawMode(true)
+    process.stdin.resume()
+    process.stdin.setEncoding("utf8")
+
+    function cleanup() {
+      process.stdin.setRawMode(false)
+      process.stdin.pause()
+      process.stdin.removeListener("data", onKey)
+    }
+
+    function onKey(key) {
+      if (key === "\x03") {
+        cleanup()
+        process.stdout.write("\n")
+        reject(new Error("Aborted."))
+        return
+      }
+      if (key === "\r" || key === "\n") {
+        cleanup()
+        process.stdout.write("\n")
+        resolve({
+          pluginIds: pluginItems.filter((i) => i.selected).map((i) => i.id),
+          cssChoice: cssItems.find((i) => i.selected)?.id ?? "none",
+        })
+        return
+      }
+      if (key === " ") {
+        toggle()
+      } else if (key === "\x1b[A") {
+        cursorNav = (cursorNav - 1 + navSlots.length) % navSlots.length
+      } else if (key === "\x1b[B") {
+        cursorNav = (cursorNav + 1) % navSlots.length
+      }
+      renderAll()
+    }
+
+    process.stdin.on("data", onKey)
+  })
+}
+
+// ─── Choices resolution ──────────────────────────────────────────────────────
 
 async function resolveChoices(parsed) {
-  let useTypescript = parsed.useTypescript;
-  let wantRouter = parsed.wantRouter;
+  let useTypescript = parsed.useTypescript
+  let selectedPlugins = parsed.selectedPlugins
+  let cssChoice = parsed.cssChoice
 
-  const canPrompt =
-    input.isTTY && output.isTTY && !parsed.yes;
+  const canPrompt = input.isTTY && output.isTTY && !parsed.yes
 
-  if (canPrompt && (useTypescript === undefined || wantRouter === undefined)) {
-    const rl = createInterface({ input, output });
-    try {
-      console.log("\n  create-just-dom — a few choices (Enter = default)\n");
-      if (useTypescript === undefined) {
-        const a = (
-          await rl.question("  Use TypeScript? [Y/n] ")
-        )
+  if (canPrompt) {
+    if (useTypescript === undefined) {
+      console.log("\n  create-just-dom — a few choices (Enter = default)\n")
+      const rl = createInterface({ input, output })
+      try {
+        const a = (await rl.question("  Use TypeScript? [Y/n] "))
           .trim()
-          .toLowerCase();
+          .toLowerCase()
         useTypescript =
-          !a || a === "y" || a === "yes" || a === "ts" || a === "typescript";
+          !a || a === "y" || a === "yes" || a === "ts" || a === "typescript"
+      } finally {
+        rl.close()
       }
-      if (wantRouter === undefined) {
-        const a = (
-          await rl.question("  Install @just-dom/router (SPA links + routes)? [Y/n] ")
-        )
-          .trim()
-          .toLowerCase();
-        wantRouter = !a || a === "y" || a === "yes";
+    }
+
+    // Show unified select if either plugins or css still needs prompting
+    if (selectedPlugins === undefined || cssChoice === undefined) {
+      let result
+      try {
+        result = await promptSelections()
+      } catch {
+        process.exit(1)
       }
-    } finally {
-      rl.close();
+      if (selectedPlugins === undefined) selectedPlugins = result.pluginIds
+      if (cssChoice === undefined) cssChoice = result.cssChoice
     }
   }
 
-  if (useTypescript === undefined) {
-    useTypescript = true;
-  }
-  if (wantRouter === undefined) {
-    wantRouter = true;
+  if (useTypescript === undefined) useTypescript = true
+  if (selectedPlugins === undefined) selectedPlugins = []
+  if (cssChoice === undefined) cssChoice = "none"
+
+  // Validate plugin IDs
+  const validPluginIds = OFFICIAL_PLUGINS.map((p) => p.id)
+  const unknown = selectedPlugins.filter((id) => !validPluginIds.includes(id))
+  if (unknown.length > 0) {
+    console.warn(
+      `\n  Warning: unknown plugin(s): ${unknown.join(", ")}. Valid: ${validPluginIds.join(", ")}\n`
+    )
+    selectedPlugins = selectedPlugins.filter((id) =>
+      validPluginIds.includes(id)
+    )
   }
 
-  return { useTypescript, wantRouter };
+  // Validate CSS choice
+  const validCssIds = CSS_OPTIONS.map((o) => o.id)
+  if (!validCssIds.includes(cssChoice)) {
+    console.warn(
+      `\n  Warning: unknown --css value "${cssChoice}". Valid: ${validCssIds.join(", ")}. Defaulting to none.\n`
+    )
+    cssChoice = "none"
+  }
+
+  return { useTypescript, selectedPlugins, cssChoice }
 }
 
+// ─── Main ────────────────────────────────────────────────────────────────────
+
 async function main() {
-  const parsed = parseArgs(process.argv);
+  const parsed = parseArgs(process.argv)
   if (parsed.help) {
-    printHelp();
-    return;
+    printHelp()
+    return
   }
 
-  const cwd = process.cwd();
-  const { projectName, usePnpm, yes: skipPrompts } = parsed;
-  assertValidProjectName(projectName);
+  const cwd = process.cwd()
+  const { projectName, usePnpm } = parsed
+  assertValidProjectName(projectName)
 
-  const { useTypescript, wantRouter } = await resolveChoices(parsed);
+  const { useTypescript, selectedPlugins, cssChoice } =
+    await resolveChoices(parsed)
 
-  const projectDir = resolve(cwd, projectName);
+  const projectDir = resolve(cwd, projectName)
   if (existsSync(projectDir)) {
     throw new Error(
-      `Directory already exists: ${projectDir}\nChoose another name or remove the folder.`,
-    );
+      `Directory already exists: ${projectDir}\nChoose another name or remove the folder.`
+    )
   }
 
-  const viteTemplate = useTypescript ? "vanilla-ts" : "vanilla";
-  const langLabel = useTypescript ? "vanilla-ts" : "vanilla (JavaScript)";
-  console.log(`\n  Creating Vite (${langLabel}) project "${projectName}"…\n`);
-  run("npm", ["create", "vite@latest", projectName, "--", "--template", viteTemplate], {
-    cwd,
-  });
+  const viteTemplate = useTypescript ? "vanilla-ts" : "vanilla"
+  const langLabel = useTypescript ? "vanilla-ts" : "vanilla (JavaScript)"
+  console.log(`\n  Creating Vite (${langLabel}) project "${projectName}"…\n`)
+  run(
+    "npm",
+    ["create", "vite@latest", projectName, "--", "--template", viteTemplate],
+    { cwd }
+  )
 
-  let withRouter = false;
-  console.log("\n  Adding just-dom…\n");
-  if (wantRouter) {
-    console.log("  (trying @just-dom/router as well)\n");
-    withRouter = tryInstallRouterDeps(projectDir, usePnpm);
-    if (!withRouter) {
-      console.warn(
-        "\n  Note: @just-dom/router could not be installed from the registry (not published yet or offline).",
-      );
-      console.warn("  Installing just-dom only. You can add the router later.\n");
-      installJustDomOnly(projectDir, usePnpm);
-    }
+  const extraPkgs = selectedPlugins.map(
+    (id) => OFFICIAL_PLUGINS.find((p) => p.id === id).pkg
+  )
+  if (extraPkgs.length > 0) {
+    console.log(`\n  Adding just-dom + ${extraPkgs.join(", ")}…\n`)
   } else {
-    installJustDomOnly(projectDir, usePnpm);
+    console.log("\n  Adding just-dom…\n")
+  }
+  installPackages(projectDir, usePnpm, extraPkgs)
+
+  if (cssChoice === "tailwind") {
+    console.log("\n  Adding tailwindcss, @tailwindcss/vite…\n")
+    installDevPackages(projectDir, usePnpm, [
+      "tailwindcss",
+      "@tailwindcss/vite",
+    ])
+  } else if (cssChoice === "tailwind-daisyui") {
+    console.log("\n  Adding tailwindcss, @tailwindcss/vite, daisyui…\n")
+    installDevPackages(projectDir, usePnpm, [
+      "tailwindcss",
+      "@tailwindcss/vite",
+      "daisyui",
+    ])
   }
 
-  removeStarterFiles(projectDir, useTypescript);
+  removeStarterFiles(projectDir, useTypescript)
 
-  const ext = useTypescript ? "ts" : "js";
-  const cfgName = `jd.config.${ext}`;
-  const mainName = `main.${ext}`;
+  const ext = useTypescript ? "ts" : "js"
+  const withTailwind = cssChoice !== "none"
 
-  let jdBody;
-  let mainBody;
-  if (withRouter) {
-    jdBody = useTypescript ? JD_CONFIG_WITH_ROUTER_TS : JD_CONFIG_WITH_ROUTER_JS;
-    mainBody = useTypescript ? mainTsWithRouter(ext) : mainJsWithRouter(ext);
-  } else {
-    jdBody = useTypescript ? JD_CONFIG_BASE_TS : JD_CONFIG_BASE_JS;
-    mainBody = useTypescript ? mainTsBase(ext) : mainJsBase(ext);
+  writeFileSync(
+    join(projectDir, "src", `jd.config.${ext}`),
+    buildJdConfig(selectedPlugins, useTypescript),
+    "utf8"
+  )
+  writeFileSync(
+    join(projectDir, "src", `main.${ext}`),
+    useTypescript ? mainTs(ext, cssChoice) : mainJs(cssChoice),
+    "utf8"
+  )
+  writeFileSync(
+    join(projectDir, "src", "style.css"),
+    buildStyleCss(cssChoice),
+    "utf8"
+  )
+
+  if (withTailwind) {
+    writeFileSync(join(projectDir, `vite.config.${ext}`), VITE_CONFIG, "utf8")
   }
 
-  writeFileSync(join(projectDir, "src", cfgName), jdBody, "utf8");
-  writeFileSync(join(projectDir, "src", mainName), mainBody, "utf8");
-  writeFileSync(join(projectDir, "src", "style.css"), STYLE_CSS, "utf8");
   writeFileSync(
     join(projectDir, "README.md"),
-    readme({ withRouter, useTypescript }),
-    "utf8",
-  );
+    readme({ selectedPlugins, cssChoice, useTypescript }),
+    "utf8"
+  )
 
-  patchIndexHtml(projectDir, projectName);
+  patchIndexHtml(projectDir, projectName)
 
-  console.log(`\n  Done. (${useTypescript ? "TypeScript" : "JavaScript"}${withRouter ? ", with router" : ", no router"})\n`);
-  console.log(`    cd ${projectName}`);
+  const parts = [useTypescript ? "TypeScript" : "JavaScript"]
+  if (extraPkgs.length > 0) parts.push(`plugins: ${extraPkgs.join(", ")}`)
+  if (cssChoice !== "none") {
+    const cssLabel =
+      CSS_OPTIONS.find((o) => o.id === cssChoice)?.label ?? cssChoice
+    parts.push(cssLabel)
+  }
+  console.log(`\n  Done. (${parts.join(" · ")})\n`)
+  console.log(`    cd ${projectName}`)
   if (usePnpm) {
-    console.log("    pnpm install   # if the Vite template left the tree incomplete");
-    console.log("    pnpm dev\n");
+    console.log(
+      "    pnpm install   # if the Vite template left the tree incomplete"
+    )
+    console.log("    pnpm dev\n")
   } else {
-    console.log("    npm install    # if the Vite template left the tree incomplete");
-    console.log("    npm run dev\n");
+    console.log(
+      "    npm install    # if the Vite template left the tree incomplete"
+    )
+    console.log("    npm run dev\n")
   }
 }
 
 main().catch((e) => {
-  console.error(e instanceof Error ? e.message : e);
-  process.exit(1);
-});
+  console.error(e instanceof Error ? e.message : e)
+  process.exit(1)
+})

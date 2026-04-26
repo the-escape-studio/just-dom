@@ -1,6 +1,6 @@
 {
   "name": "site",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "type": "module",
   "private": true,
   "scripts": {
@@ -23,6 +23,7 @@
     "fumadocs-ui": "npm:@fumadocs/base-ui@latest",
     "@just-dom/lucide": "workspace:*",
     "@just-dom/router": "workspace:*",
+    "@just-dom/signals": "workspace:*",
     "just-dom": "workspace:*",
     "lucide": "^0.577.0",
     "lucide-react": "^1.8.0",

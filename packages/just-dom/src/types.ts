@@ -107,7 +107,7 @@ export type JDCreateElementOptions<T extends JDAllTags> = Omit<
 > &
   JDSvgOptionsAugment<T> & {
     style?: Partial<CSSStyleDeclaration>;
-    ref?: JDRef<T>;
+    ref?: JDRef<T> | ((el: JDTagsMap[T]) => void);
     [key: `data-${string}`]: string | undefined;
     [key: `data${string}`]: string | undefined;
   };
@@ -121,7 +121,7 @@ export type JDRef<T extends JDAllTags> = { current: JDTagsMap[T] | null };
 export type JDom = {
   [K in JDAllTags]: (
     props?: JDCreateElementOptions<K>,
-    children?: (HTMLElement | SVGElement | string)[]
+    children?: JDCreateElementChildren
   ) => JDTagsMap[K];
 } & {
   fragment: typeof createFragment;

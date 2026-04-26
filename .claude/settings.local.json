@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install *)",
+      "Bash(pnpm --filter @just-dom/signals build)",
+      "Bash(pnpm --filter @just-dom/signals test)"
+    ]
+  }
+}

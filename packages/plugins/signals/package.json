@@ -1,12 +1,12 @@
 {
-  "name": "just-dom",
-  "version": "2.1.0",
-  "description": "A lightweight library for DOM manipulation",
-  "homepage": "https://just-dom.vercel.app/",
+  "name": "@just-dom/signals",
+  "version": "1.0.0",
+  "description": "Fine-grained reactive signals for just-dom",
+  "homepage": "https://just-dom.vercel.app/docs/official-plugins/signals",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/the-escape-studio/just-dom.git",
-    "directory": "packages/just-dom"
+    "directory": "packages/plugins/signals"
   },
   "bugs": {
     "url": "https://github.com/the-escape-studio/just-dom/issues"
@@ -36,7 +36,8 @@
   ],
   "scripts": {
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
-    "build": "tsup src/index.ts --format cjs,esm --dts"
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "test": "jest"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
@@ -44,6 +45,6 @@
     "jest-environment-jsdom": "^30.3.0",
     "ts-jest": "^29.4.9",
     "tsup": "^8.5.1",
-    "typescript": "^6.0.3"
+    "typescript": "^5.9.3"
   }
 }

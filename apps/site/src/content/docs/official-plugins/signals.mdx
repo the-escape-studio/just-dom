@@ -1,0 +1,355 @@
+---
+title: "@just-dom/signals"
+description: Fine-grained reactive signals for Just DOM
+---
+
+`@just-dom/signals` adds **fine-grained reactivity** to Just DOM: a single source of truth that keeps your data and UI in sync automatically, without manual subscription management or full re-renders.
+
+The model is the same used by SolidJS and Angular Signals — a lightweight push-pull system where reads inside an `effect` automatically subscribe to changes.
+
+## Installation
+
+```package-install
+@just-dom/signals
+```
+
+No peer dependencies. The package works standalone alongside any Just DOM setup.
+
+## Quick start
+
+```ts
+import DOM, { createRoot } from "just-dom";
+import { createSignal, computed, reactive, effect } from "@just-dom/signals";
+
+const [count, setCount] = createSignal(0);
+const double = computed(() => count() * 2);
+
+const app = DOM.div({}, [
+  DOM.button({ onclick: () => setCount((c) => c - 1) }, ["-"]),
+  DOM.span({}, [reactive(count)]),
+  DOM.button({ onclick: () => setCount((c) => c + 1) }, ["+"]),
+  DOM.p({}, ["doubled: ", reactive(double)]),
+]);
+
+createRoot("app", app);
+```
+
+`reactive(count)` returns a `Text` node that updates itself in place — no refs, no `textContent =` calls anywhere.
+
+## Primitives
+
+### `createSignal`
+
+```ts
+function createSignal<T>(initial: T): [Signal<T>, SignalSetter<T>]
+```
+
+Creates a reactive value. The getter `get()` is a plain function — calling it inside an `effect` or `computed` registers a subscription automatically. The setter accepts either a new value or an updater function:
+
+```ts
+const [name, setName] = createSignal("world");
+
+setName("just-dom");           // direct value
+setName((prev) => prev + "!"); // updater
+```
+
+Writing the same value (`Object.is` equality) is a **no-op** — effects do not re-run.
+
+---
+
+### `effect`
+
+```ts
+function effect(fn: EffectFn): EffectDispose
+function effect(el: Element, fn: EffectFn): EffectDispose
+```
+
+Runs `fn` immediately, then re-runs it whenever any signal read inside changes. Returns a **dispose** function that stops the effect and frees all subscriptions.
+
+**Without `el`** — dispose is manual. Use this form when the effect lives outside the element tree or you need precise control over teardown:
+
+```ts
+const [active, setActive] = createSignal(false);
+const btn = DOM.button({}, ["Toggle"]);
+
+const stop = effect(() => {
+  btn.className = active() ? "active" : "";
+});
+
+// call when you remove btn from the DOM
+stop();
+```
+
+**With `el`** — self-disposes automatically when the element leaves the live document. The returned dispose can still be called early for explicit teardown. This is the natural form to use inside a **callback ref**:
+
+```ts
+DOM.button({
+  ref: (el) => {
+    effect(el, () => {
+      el.className = active() ? "active" : "";
+      el.disabled  = !active();
+    });
+  },
+  onclick: () => setActive((a) => !a),
+}, ["Toggle"]);
+```
+
+The effect is declared right next to the element — no separate variable, no external cleanup code.
+
+`fn` may return a cleanup callback that runs before each re-execution and on final dispose:
+
+```ts
+effect(() => {
+  const id = setInterval(() => console.log(count()), 1000);
+  return () => clearInterval(id);
+});
+```
+
+Dependencies are **re-evaluated on each run** — signals read inside a conditional branch are tracked only while that branch executes. Switching branches drops stale subscriptions automatically.
+
+---
+
+### `computed`
+
+```ts
+function computed<T>(fn: () => T): Signal<T>
+```
+
+Returns a **read-only signal** whose value is derived from `fn`. Re-evaluates when dependencies change and propagates to any effect or computed that reads it.
+
+```ts
+const [price, setPrice] = createSignal(100);
+const [qty, setQty]     = createSignal(3);
+const total = computed(() => price() * qty());
+
+DOM.span({}, [reactive(total)]);
+```
+
+Chains work naturally:
+
+```ts
+const vat        = computed(() => total() * 0.22);
+const grandTotal = computed(() => total() + vat());
+```
+
+---
+
+### `reactive`
+
+```ts
+function reactive(signal: () => unknown): Text
+```
+
+Creates a `Text` DOM node whose `nodeValue` stays in sync with `signal()`. Pass it wherever Just DOM accepts a child node — no extra setup.
+
+```ts
+DOM.p({}, ["Count is: ", reactive(count)]);
+DOM.h1({}, [reactive(() => `Hello, ${name()}`)]);
+```
+
+The text node **self-cleans**: once removed from the live document its internal effect disposes automatically.
+
+> The self-cleanup fires on the next signal change after removal — one-tick lag. This is intentional and never observable in practice.
+
+---
+
+## Reactive attributes and styles
+
+Use `effect(el, fn)` inside a **callback ref** to bind attributes, classes, and styles reactively. The element is available directly — no separate variable needed:
+
+```ts
+const [theme, setTheme] = createSignal<"light" | "dark">("light");
+
+const box = DOM.div(
+  {
+    ref: (el) => {
+      effect(el, () => {
+        el.style.background = theme() === "dark" ? "#1a1a1a" : "#fff";
+        el.style.color      = theme() === "dark" ? "#fff" : "#1a1a1a";
+      });
+    },
+    style: { padding: "16px" },
+  },
+  [DOM.p({}, [reactive(theme)])],
+);
+```
+
+The effect self-disposes when `box` is removed from the DOM — no cleanup code needed outside the element definition.
+
+If you also need to access the element from outside the tree, save the ref in the same callback:
+
+```ts
+import { createRef } from "just-dom";
+
+const boxRef = createRef<"div">();
+
+const box = DOM.div({
+  ref: (el) => {
+    boxRef.current = el;
+    effect(el, () => {
+      el.style.background = theme() === "dark" ? "#1a1a1a" : "#fff";
+    });
+  },
+});
+```
+
+---
+
+## Conditional rendering
+
+`effect(el, fn)` inside a callback ref lets you surgically add or remove children without touching siblings — keep a local reference to the current node and swap it:
+
+```ts
+const [show, setShow] = createSignal(false);
+
+let panel: HTMLElement | null = null;
+
+DOM.section({
+  ref: (el) => {
+    effect(el, () => {
+      const next = show()
+        ? DOM.div({ style: { color: "#16a34a" } }, ["Panel is visible"])
+        : null;
+      panel?.remove();
+      panel = next;
+      if (next) el.appendChild(next);
+    });
+  },
+}, [
+  DOM.h2({}, ["Static title"]),    // never touched
+  DOM.button(
+    { onclick: () => setShow((v) => !v) },
+    [reactive(() => show() ? "Hide" : "Show")],
+  ),
+]);
+```
+
+The static siblings (`h2`, `button`) are never recreated — only the panel is added or removed.
+
+---
+
+## Multiple signals in one effect
+
+An effect subscribes to **every signal it reads** in a given run. Reading two signals means the effect re-runs whenever either changes:
+
+```ts
+const [first, setFirst] = createSignal("Ada");
+const [last, setLast]   = createSignal("Lovelace");
+
+DOM.span({
+  ref: (el) => {
+    effect(el, () => {
+      el.textContent = `${first()} ${last()}`;
+    });
+  },
+});
+```
+
+Updating `first` or `last` each trigger one re-run.
+
+---
+
+## Limits and caveats
+
+### No deep reactivity
+
+Signals track the **reference**, not the contents of an object or array. Mutating a property does **not** trigger updates:
+
+```ts
+const [items, setItems] = createSignal(["a", "b"]);
+
+// ✗ Does not trigger effects — same reference
+items().push("c");
+
+// ✓ Replace the array
+setItems([...items(), "c"]);
+```
+
+### No batching in V1
+
+Each setter call immediately flushes all subscribed effects. Two setters in sequence run effects twice:
+
+```ts
+setFirst("Grace");  // effects run
+setLast("Hopper");  // effects run again
+```
+
+For most UIs this is imperceptible. A `batch()` API may arrive in a future release.
+
+### `effect(fn)` without `el` — dispose is manual
+
+`reactive` text nodes and `effect(el, fn)` self-clean automatically. The bare `effect(fn)` form does not — you must call the returned dispose when tearing down the UI:
+
+```ts
+const stop = effect(() => {
+  externalEl.className = active() ? "on" : "off";
+});
+
+// when removing externalEl:
+stop();
+```
+
+The simplest fix is to use `effect(el, fn)` inside a callback ref instead.
+
+### Effects run synchronously
+
+`effect(fn)` runs `fn` on the current call stack. Avoid layout-forcing DOM reads (like `offsetHeight`) inside effects on hot signal paths.
+
+### `computed` is eager
+
+A `computed` recalculates **immediately** when a dependency changes, even if nothing is currently reading it. Lazy computed (recalculate only on read) is not supported in V1.
+
+---
+
+## API reference
+
+### `createSignal<T>`
+
+| | |
+|---|---|
+| **Signature** | `(initial: T) => [Signal<T>, SignalSetter<T>]` |
+| **Getter** | `() => T` — reads the value; subscribes if called inside an effect |
+| **Setter** | `(next: T \| ((prev: T) => T)) => void` — updates the value and notifies subscribers |
+| **No-op rule** | Writing the same value (`Object.is`) does nothing |
+
+### `effect`
+
+| | |
+|---|---|
+| **Signatures** | `(fn: EffectFn) => EffectDispose` · `(el: Element, fn: EffectFn) => EffectDispose` |
+| **Runs** | Immediately, then on every dependency change |
+| **Returns** | Dispose function — always returned; call early for explicit teardown |
+| **With `el`** | Self-disposes when `el` leaves the live document (one-tick lag) |
+| **Cleanup** | `fn` may return `() => void`; called before each re-run and on dispose |
+
+### `computed<T>`
+
+| | |
+|---|---|
+| **Signature** | `(fn: () => T) => Signal<T>` |
+| **Returns** | A read-only signal backed by the derived computation |
+| **Updates** | Eagerly when any dependency changes |
+
+### `reactive`
+
+| | |
+|---|---|
+| **Signature** | `(signal: () => unknown) => Text` |
+| **Returns** | A live `Text` DOM node |
+| **Self-cleanup** | Disposes its internal effect when removed from the live document |
+
+---
+
+## Exports
+
+| Export | Description |
+|--------|-------------|
+| `createSignal` | Reactive primitive — getter/setter pair |
+| `effect` | Auto-tracking side effect with optional self-cleanup |
+| `computed` | Derived read-only signal |
+| `reactive` | Auto-updating `Text` DOM node |
+| `Signal<T>` | Getter function type |
+| `SignalSetter<T>` | Setter function type |
+| `SignalPair<T>` | `[Signal<T>, SignalSetter<T>]` |
+| `EffectFn` | `() => void \| (() => void)` |
+| `EffectDispose` | `() => void` |

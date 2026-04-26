@@ -15,15 +15,14 @@ export const createElement = <T extends JDAllTags>(
 
   // Applica gli attributi
   if (options) {
-    // Gestisce ref se presente
-    if (
-      options.ref &&
-      typeof options.ref === "object" &&
-      "current" in options.ref
-    ) {
-      options.ref.current = el;
+    if (options.ref) {
       const { ref, ...restOptions } = options;
       applyAttributes(el, restOptions);
+      if (typeof ref === "function") {
+        ref(el);
+      } else if (typeof ref === "object" && "current" in ref) {
+        ref.current = el;
+      }
     } else {
       applyAttributes(el, options);
     }

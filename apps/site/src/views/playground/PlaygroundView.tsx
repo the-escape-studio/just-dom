@@ -9,9 +9,11 @@ import DOM, {
 } from "just-dom";
 import { createLucidePlugin } from "@just-dom/lucide";
 import { createRouterPlugin, defineRoutes } from "@just-dom/router";
+import { createSignal, effect, computed, reactive } from "@just-dom/signals";
 import { House, Heart, Loader, Menu, Search, Star } from "lucide";
 import { PLAYGROUND_LUCIDE_TYPES } from "./playground-lucide-ambient";
 import { PLAYGROUND_ROUTER_TYPES } from "./playground-router-ambient";
+import { PLAYGROUND_SIGNALS_TYPES } from "./playground-signals-ambient";
 import { PLAYGROUND_TYPES } from "./playground-globals.generated";
 import { copyToClipboard } from "@/lib/utils";
 import { cn } from "@workspace/ui/lib/utils";
@@ -29,368 +31,13 @@ import {
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useRef, useState } from "react";
+import { PLAYGROUND_PRESETS } from "./playground-presets";
 
 type PlaygroundLog = { kind: "log" | "warn" | "error"; message: string };
 type MonacoInstance = Parameters<OnMount>[1];
 
 /** Subset of lucide icons available in the playground (matches PLAYGROUND_LUCIDE_TYPES + execute() bindings). */
 const PLAYGROUND_LUCIDE_ICONS = { House, Search, Heart, Star, Menu, Loader } as const;
-
-const PRESETS: { label: string; value: string; code: string }[] = [
-  {
-    label: "Hello World",
-    value: "hello",
-    code: `const app = DOM.div(
-  { style: { padding: "24px", fontFamily: "system-ui, sans-serif" } },
-  [
-    DOM.h1({}, ["Hello, Just DOM!"]),
-    DOM.p(
-      { style: { color: "#6b7280", marginTop: "8px" } },
-      ["Building UIs without the overhead."]
-    ),
-  ]
-);
-
-createRoot(mount, app);`,
-  },
-  {
-    label: "Styles & Events",
-    value: "styles-events",
-    code: `const app = DOM.div(
-  { style: { padding: "24px", fontFamily: "system-ui, sans-serif" } },
-  [
-    DOM.h2({}, ["Interactive Button"]),
-    DOM.button(
-      {
-        style: {
-          marginTop: "12px",
-          padding: "10px 20px",
-          backgroundColor: "#3b82f6",
-          color: "#fff",
-          border: "none",
-          borderRadius: "6px",
-          cursor: "pointer",
-          fontSize: "14px",
-        },
-        onclick: () => console.log("Button clicked!"),
-        onmouseenter: (e) => {
-          (e.target as HTMLElement).style.backgroundColor = "#2563eb";
-        },
-        onmouseleave: (e) => {
-          (e.target as HTMLElement).style.backgroundColor = "#3b82f6";
-        },
-      },
-      ["Hover & click me"]
-    ),
-  ]
-);
-
-createRoot(mount, app);`,
-  },
-  {
-    label: "Refs",
-    value: "refs",
-    code: `const inputRef = createRef<"input">();
-
-const form = DOM.div(
-  { style: { padding: "24px", fontFamily: "system-ui, sans-serif" } },
-  [
-    DOM.h2({}, ["Using Refs"]),
-    DOM.div({ style: { display: "flex", gap: "8px", marginTop: "12px" } }, [
-      DOM.input({
-        ref: inputRef,
-        type: "text",
-        placeholder: "Type something...",
-        style: {
-          padding: "8px 12px",
-          border: "1px solid #d4d4d8",
-          borderRadius: "6px",
-        },
-      }),
-      DOM.button(
-        {
-          style: {
-            padding: "8px 16px",
-            backgroundColor: "#3b82f6",
-            color: "#fff",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-          },
-          onclick: () => {
-            const value = inputRef.current?.value;
-            console.log("Input value:", value || "(empty)");
-          },
-        },
-        ["Log Value"]
-      ),
-    ]),
-  ]
-);
-
-createRoot(mount, form);`,
-  },
-  {
-    label: "Todo List",
-    value: "todo",
-    code: `const inputRef = createRef<"input">();
-const listRef = createRef<"ul">();
-
-const addItem = () => {
-  const value = inputRef.current?.value;
-  if (!value) return;
-  const item = DOM.li(
-    { style: { padding: "8px", borderBottom: "1px solid #eee" } },
-    [value]
-  );
-  listRef.current?.appendChild(item);
-  if (inputRef.current) inputRef.current.value = "";
-};
-
-const app = DOM.div(
-  {
-    style: {
-      padding: "24px",
-      fontFamily: "system-ui, sans-serif",
-      maxWidth: "400px",
-    },
-  },
-  [
-    DOM.h2({}, ["Todo List"]),
-    DOM.div({ style: { display: "flex", gap: "8px", marginTop: "12px" } }, [
-      DOM.input({
-        ref: inputRef,
-        type: "text",
-        placeholder: "Add a new task...",
-        style: {
-          flex: "1",
-          padding: "8px 12px",
-          border: "1px solid #d4d4d8",
-          borderRadius: "6px",
-        },
-        onkeydown: (e) => {
-          if (e.key === "Enter") addItem();
-        },
-      }),
-      DOM.button(
-        {
-          style: {
-            padding: "8px 16px",
-            backgroundColor: "#3b82f6",
-            color: "#fff",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-          },
-          onclick: addItem,
-        },
-        ["Add"]
-      ),
-    ]),
-    DOM.ul({
-      ref: listRef,
-      style: { listStyle: "none", padding: "0", marginTop: "12px" },
-    }),
-  ]
-);
-
-createRoot(mount, app);`,
-  },
-  {
-    label: "SVG",
-    value: "svg",
-    code: `const icon = DOM.svg(
-  {
-    width: "120",
-    height: "120",
-    viewBox: "0 0 120 120",
-    fill: "none",
-  },
-  [
-    DOM.circle({
-      cx: "60",
-      cy: "60",
-      r: "50",
-      stroke: "#3b82f6",
-      "stroke-width": "4",
-      fill: "#eff6ff",
-    }),
-    DOM.text(
-      {
-        x: "60",
-        y: "66",
-        "text-anchor": "middle",
-        "font-size": "20",
-        fill: "#3b82f6",
-        "font-family": "system-ui, sans-serif",
-        "font-weight": "600",
-      },
-      ["SVG"]
-    ),
-  ]
-);
-
-const app = DOM.div(
-  {
-    style: {
-      padding: "24px",
-      fontFamily: "system-ui, sans-serif",
-      textAlign: "center",
-    },
-  },
-  [DOM.h2({}, ["SVG Elements"]), icon]
-);
-
-createRoot(mount, app);`,
-  },
-  {
-    label: "Lucide (official plugin)",
-    value: "lucide",
-    code: `const lucide = createLucidePlugin({ icons: LUCIDE });
-const jd = withPlugins(DOM, [lucide]);
-
-const app = jd.div(
-  { style: { padding: "24px", fontFamily: "system-ui, sans-serif" } },
-  [
-    jd.h2({}, ["@just-dom/lucide"]),
-    jd.p({ style: { marginTop: "8px", color: "#6b7280" } }, [
-      "Icons: House, Search, Star, … (playground ships a small preset; see LUCIDE)",
-    ]),
-    jd.div(
-      { style: { display: "flex", gap: "12px", marginTop: "16px", alignItems: "center" } },
-      [
-        jd.icon("House", { size: 28, color: "#3b82f6" }),
-        jd.icon("Search", { size: 28, color: "#22c55e" }),
-        jd.icon("Star", { size: 28, color: "#f59e0b" }),
-      ],
-    ),
-  ],
-);
-
-createRoot(mount, app);`,
-  },
-  {
-    label: "Router (official plugin)",
-    value: "router",
-    code: `const router = createRouterPlugin({ mode: "hash" });
-const jd = withPlugins(DOM, [router]);
-
-const routes = defineRoutes([
-  {
-    layout: ({ outlet }) =>
-      jd.div({ style: { padding: "16px", fontFamily: "system-ui, sans-serif" } }, [
-        jd.div(
-          {
-            style: {
-              display: "flex",
-              gap: "12px",
-              marginBottom: "12px",
-              flexWrap: "wrap",
-            },
-          },
-          [
-            jd.routerLink(
-              ({ isExact }) => ({
-                href: "#/",
-                style: {
-                  color: isExact ? "#2563eb" : "",
-                  fontWeight: isExact ? "700" : "",
-                },
-                "aria-current": isExact ? "page" : undefined,
-              }),
-              ["Home"],
-            ),
-            jd.routerLink(
-              ({ isExact }) => ({
-                href: "#/user/alice",
-                style: {
-                  color: isExact ? "#2563eb" : "",
-                  fontWeight: isExact ? "700" : "",
-                },
-                "aria-current": isExact ? "page" : undefined,
-              }),
-              ["Alice"],
-            ),
-            jd.routerLink(
-              ({ isExact }) => ({
-                href: "#/user/bob",
-                style: {
-                  color: isExact ? "#2563eb" : "",
-                  fontWeight: isExact ? "700" : "",
-                },
-                "aria-current": isExact ? "page" : undefined,
-              }),
-              ["Bob"],
-            ),
-          ],
-        ),
-        outlet,
-      ]),
-    children: [
-      {
-        index: true,
-        element: () =>
-          jd.p({ style: { color: "#6b7280" } }, ["Pick a route via the links."]),
-      },
-      {
-        path: "user/:name",
-        element: ({ params }) =>
-          jd.p({ style: { marginTop: "8px" } }, ["Hello, " + params.name + "!"]),
-      },
-      { path: "*", element: () => jd.p({ style: { color: "#ef4444" } }, ["No route"]) },
-    ],
-  },
-]);
-
-const app = jd.div({}, [
-  jd.h2({}, ["@just-dom/router"]),
-  jd.router(routes),
-]);
-
-createRoot(mount, app);`,
-  },
-  {
-    label: "Plugin",
-    value: "plugin",
-    code: `const badgePlugin = definePlugin({
-  name: "badge",
-  extend: () => ({
-    badge: (text: string, color = "#3b82f6"): HTMLSpanElement => {
-      return createElement("span", {
-        style: {
-          display: "inline-block",
-          padding: "2px 10px",
-          borderRadius: "9999px",
-          backgroundColor: color,
-          color: "#fff",
-          fontSize: "12px",
-          fontWeight: "600",
-        },
-      }, [text]);
-    },
-  }),
-});
-
-const jd = withPlugins(DOM, [badgePlugin]);
-
-const app = jd.div(
-  { style: { padding: "24px", fontFamily: "system-ui, sans-serif" } },
-  [
-    jd.h2({}, ["Plugin System"]),
-    jd.p({ style: { marginTop: "12px" } }, [
-      "Status: ",
-      jd.badge("Active", "#22c55e"),
-      " ",
-      jd.badge("New"),
-      " ",
-      jd.badge("Beta", "#f59e0b"),
-    ]),
-  ]
-);
-
-createRoot(mount, app);`,
-  },
-];
 
 const IFRAME_HTML = `<!DOCTYPE html>
 <html><head><style>
@@ -414,7 +61,7 @@ const stringifyArg = (value: unknown): string => {
 
 const PlaygroundView = () => {
   const { resolvedTheme } = useTheme();
-  const [code, setCode] = useState(PRESETS[0]?.code || "");
+  const [code, setCode] = useState(PLAYGROUND_PRESETS[0]?.code || "");
   const [logs, setLogs] = useState<PlaygroundLog[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [consoleOpen, setConsoleOpen] = useState(false);
@@ -512,6 +159,10 @@ const PlaygroundView = () => {
         "createLucidePlugin",
         "createRouterPlugin",
         "defineRoutes",
+        "createSignal",
+        "effect",
+        "computed",
+        "reactive",
         "LUCIDE",
         "mount",
         "console",
@@ -550,6 +201,10 @@ const PlaygroundView = () => {
         createLucidePlugin,
         createRouterPlugin,
         defineRoutes,
+        createSignal,
+        effect,
+        computed,
+        reactive,
         PLAYGROUND_LUCIDE_ICONS,
         mountEl,
         scopedConsole,
@@ -580,7 +235,7 @@ const PlaygroundView = () => {
       },
     });
 
-    void runCode(PRESETS[0]?.code || "");
+    void runCode(PLAYGROUND_PRESETS[0]?.code || "");
   };
 
   const handleRun = () => {
@@ -590,7 +245,7 @@ const PlaygroundView = () => {
   };
 
   const handlePresetChange = (value: string) => {
-    const preset = PRESETS.find((p) => p.value === value);
+    const preset = PLAYGROUND_PRESETS.find((p) => p.value === value);
     if (!preset) return;
     setCode(preset.code);
     setMenuOpen(false);
@@ -674,7 +329,7 @@ const PlaygroundView = () => {
 
                 {menuOpen && (
                   <div className="absolute right-0 top-full mt-1 z-50 min-w-[11rem] rounded-md border bg-popover p-1 shadow-md">
-                    {PRESETS.map((p) => (
+                    {PLAYGROUND_PRESETS.map((p) => (
                       <button
                         key={p.value}
                         type="button"
@@ -716,6 +371,10 @@ const PlaygroundView = () => {
               m.languages.typescript.typescriptDefaults.addExtraLib(
                 PLAYGROUND_ROUTER_TYPES,
                 "playground-router.d.ts",
+              );
+              m.languages.typescript.typescriptDefaults.addExtraLib(
+                PLAYGROUND_SIGNALS_TYPES,
+                "playground-signals.d.ts",
               );
             }}
             onMount={handleEditorMount}

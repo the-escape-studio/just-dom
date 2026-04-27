@@ -44,6 +44,8 @@ const ConverterView = () => {
   const [htmlInput, setHtmlInput] = useState(defaultHtml);
   const [jsOutput, setJsOutput] = useState("");
   const [prefix, setPrefix] = useState<"DOM" | "jd">("DOM");
+  const prefixRef = useRef(prefix);
+  prefixRef.current = prefix;
   const { resolvedTheme } = useTheme();
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -77,7 +79,7 @@ const ConverterView = () => {
       setJsOutput("");
       return;
     }
-    const result = await convertHtmlToDom(html, prefix);
+    const result = await convertHtmlToDom(html, prefixRef.current);
     setJsOutput(result);
   };
 
@@ -124,22 +126,20 @@ const ConverterView = () => {
               <button
                 type="button"
                 onClick={() => setPrefix("DOM")}
-                className={`px-3 py-1.5 transition-colors ${
-                  prefix === "DOM"
-                    ? "bg-foreground text-background"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
+                className={`px-3 py-1.5 transition-colors ${prefix === "DOM"
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground"
+                  }`}
               >
                 DOM.
               </button>
               <button
                 type="button"
                 onClick={() => setPrefix("jd")}
-                className={`px-3 py-1.5 transition-colors ${
-                  prefix === "jd"
-                    ? "bg-foreground text-background"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
+                className={`px-3 py-1.5 transition-colors ${prefix === "jd"
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground"
+                  }`}
               >
                 jd.
               </button>

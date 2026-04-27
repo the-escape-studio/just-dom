@@ -25,6 +25,7 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs"
+import { createInterface } from "node:readline"
 import { stdin as input, stdout as output } from "node:process"
 import { basename, join, resolve } from "node:path"
 
@@ -133,7 +134,7 @@ function parseArgs(argv) {
     }
   }
   return {
-    projectName: positional[0] ?? "just-dom-app",
+    projectName: positional[0],
     usePnpm,
     useTypescript,
     selectedPlugins,
@@ -489,8 +490,23 @@ function installDevPackages(projectDir, usePnpm, pkgs) {
 
 // ─── Interactive UI ──────────────────────────────────────────────────────────
 
+async function promptText({ message, defaultValue = "" }) {
+  return new Promise((resolve) => {
+    const rl = createInterface({ input, output })
+    const hint = defaultValue ? ` (${defaultValue})` : ""
+    rl.question(`  ${message}${hint}: `, (answer) => {
+      rl.close()
+      resolve(answer.trim() || defaultValue)
+    })
+  })
+}
+
 /**
  * Single-screen keynav: radio (◯/●) or multi-select (◇/◆).
+ *
+ * Radio: arrows move + auto-select, enter confirms.
+ * Multiselect: arrows move, space toggles, enter confirms.
+ *
  * @param {{ title: string, hint: string, kind: "radio" | "multiselect", items: { id: string, label: string }[], defaultIndex?: number }} opts
  * @returns {Promise<string | string[]>} Selected id (radio) or id[] (multiselect)
  */
@@ -502,7 +518,7 @@ async function promptKeynavScreen(opts) {
     selected: kind === "radio" ? i === defaultIndex : false,
   }))
 
-  let cursor = 0
+  let cursor = defaultIndex
   let firstRender = true
   let lineCount = 0
 
@@ -593,11 +609,13 @@ async function promptKeynavScreen(opts) {
         return
       }
       if (key === " ") {
-        toggle()
+        if (kind === "multiselect") toggle()
       } else if (key === "\x1b[A") {
         cursor = (cursor - 1 + state.length) % state.length
+        if (kind === "radio") toggle()
       } else if (key === "\x1b[B") {
         cursor = (cursor + 1) % state.length
+        if (kind === "radio") toggle()
       }
       render()
     }
@@ -608,25 +626,17 @@ async function promptKeynavScreen(opts) {
 
 // ─── Choices resolution ──────────────────────────────────────────────────────
 
-async function resolveChoices(parsed) {
+async function resolveChoices(parsed, canPrompt) {
   let useTypescript = parsed.useTypescript
   let selectedPlugins = parsed.selectedPlugins
   let cssChoice = parsed.cssChoice
 
-  const canPrompt = input.isTTY && output.isTTY && !parsed.yes
-
   if (canPrompt) {
-    const needLang = useTypescript === undefined
-    const needCss = cssChoice === undefined
-    const needPlugins = selectedPlugins === undefined
-    if (needLang || needCss || needPlugins) {
-      console.log("\n  create-just-dom — a few choices\n")
-    }
     try {
-      if (needLang) {
+      if (useTypescript === undefined) {
         const langId = await promptKeynavScreen({
           title: "Language",
-          hint: "↑↓ navigate · space to select · enter confirm",
+          hint: "↑↓ navigate · enter confirm",
           kind: "radio",
           defaultIndex: 0,
           items: [
@@ -636,16 +646,16 @@ async function resolveChoices(parsed) {
         })
         useTypescript = langId === "typescript"
       }
-      if (needCss) {
+      if (cssChoice === undefined) {
         cssChoice = await promptKeynavScreen({
           title: "CSS framework",
-          hint: "↑↓ navigate · space to select · enter confirm",
+          hint: "↑↓ navigate · enter confirm",
           kind: "radio",
           defaultIndex: 0,
           items: CSS_OPTIONS.map((o) => ({ id: o.id, label: o.label })),
         })
       }
-      if (needPlugins) {
+      if (selectedPlugins === undefined) {
         selectedPlugins = await promptKeynavScreen({
           title: "Plugins (optional)",
           hint: "↑↓ navigate · space toggle · enter confirm",
@@ -697,11 +707,35 @@ async function main() {
   }
 
   const cwd = getRunBaseDir()
-  const { projectName, usePnpm } = parsed
+  const { usePnpm } = parsed
+  let { projectName } = parsed
+
+  const canPrompt = input.isTTY && output.isTTY && !parsed.yes
+
+  const needsNamePrompt = projectName === undefined && canPrompt
+  const needsOtherPrompts =
+    canPrompt &&
+    (parsed.useTypescript === undefined ||
+      parsed.cssChoice === undefined ||
+      parsed.selectedPlugins === undefined)
+
+  if (needsNamePrompt || needsOtherPrompts) {
+    console.log("\n  create-just-dom — a few choices\n")
+  }
+
+  if (needsNamePrompt) {
+    projectName = await promptText({
+      message: "Project name (use . for current directory)",
+      defaultValue: "just-dom-app",
+    })
+  } else if (projectName === undefined) {
+    projectName = "just-dom-app"
+  }
+
   assertValidProjectName(projectName)
 
   const { useTypescript, selectedPlugins, cssChoice } =
-    await resolveChoices(parsed)
+    await resolveChoices(parsed, canPrompt)
 
   const projectDir = resolve(cwd, projectName)
   assertScaffoldTargetDir(projectDir, projectName)

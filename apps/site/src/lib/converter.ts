@@ -129,7 +129,7 @@ export const getJsAttributeName = (
   return htmlName.replace(/-([a-z])/g, (_match, letter: string) => letter.toUpperCase());
 };
 
-export const convertHtmlToDom = async (html: string) => {
+export const convertHtmlToDom = async (html: string, prefix = "DOM") => {
   try {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, "text/html");
@@ -160,7 +160,7 @@ export const convertHtmlToDom = async (html: string) => {
 
       const hasChildren = childNodes.length > 0;
 
-      let result = `DOM.${el.tagName.toLowerCase()}(`;
+      let result = `${prefix}.${el.tagName.toLowerCase()}(`;
 
       if (attributes) {
         result += `{`;

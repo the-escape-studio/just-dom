@@ -43,6 +43,7 @@ const defaultHtml = `<div class="card" data-id="42">
 const ConverterView = () => {
   const [htmlInput, setHtmlInput] = useState(defaultHtml);
   const [jsOutput, setJsOutput] = useState("");
+  const [prefix, setPrefix] = useState<"DOM" | "jd">("DOM");
   const { resolvedTheme } = useTheme();
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -50,7 +51,7 @@ const ConverterView = () => {
 
   useEffect(() => {
     setIsClientLoaded(true);
-    convertHtmlToDom(defaultHtml).then((result) => {
+    convertHtmlToDom(defaultHtml, prefix).then((result) => {
       setJsOutput(result);
     });
   }, []);
@@ -63,17 +64,25 @@ const ConverterView = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  useEffect(() => {
+    if (htmlInput.trim()) {
+      convertHtmlToDom(htmlInput, prefix).then((result) => {
+        setJsOutput(result);
+      });
+    }
+  }, [prefix]);
+
   const runConvertOnly = async (html: string) => {
     if (!html.trim()) {
       setJsOutput("");
       return;
     }
-    const result = await convertHtmlToDom(html);
+    const result = await convertHtmlToDom(html, prefix);
     setJsOutput(result);
   };
 
   const handleConvert = async () => {
-    const result = await convertHtmlToDom(htmlInput);
+    const result = await convertHtmlToDom(htmlInput, prefix);
     setJsOutput(result);
     copyToClipboard(result, "JS-DOM copied");
     if (isMobile) {
@@ -110,10 +119,36 @@ const ConverterView = () => {
         {/* Header */}
         <div className="contents md:flex items-center gap-2 justify-between mb-4">
           <h2 className="text-2xl font-bold">HTML to JUST-DOM</h2>
-          <Button type="button" onClick={handleConvert} className="order-last">
-            <ChevronsLeftRightEllipsisIcon className="w-4 h-4 mr-2" />
-            Convert code
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center rounded-md border overflow-hidden text-sm font-medium">
+              <button
+                type="button"
+                onClick={() => setPrefix("DOM")}
+                className={`px-3 py-1.5 transition-colors ${
+                  prefix === "DOM"
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                DOM.
+              </button>
+              <button
+                type="button"
+                onClick={() => setPrefix("jd")}
+                className={`px-3 py-1.5 transition-colors ${
+                  prefix === "jd"
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                jd.
+              </button>
+            </div>
+            <Button type="button" onClick={handleConvert} className="order-last">
+              <ChevronsLeftRightEllipsisIcon className="w-4 h-4 mr-2" />
+              Convert code
+            </Button>
+          </div>
         </div>
         {/* Content */}
         {isClientLoaded ? (

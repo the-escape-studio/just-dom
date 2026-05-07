@@ -1,5 +1,11 @@
 # just-dom
 
+## 2.1.2
+
+### Patch Changes
+
+- 4c6907c: fix(types): allow `d` and `pathLength` on SVG element options for svgPath
+
 ## 2.1.1
 
 ### Patch Changes

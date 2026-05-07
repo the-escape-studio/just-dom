@@ -1,5 +1,14 @@
 # site
 
+## 2.3.4
+
+### Patch Changes
+
+- Updated dependencies [4c6907c]
+  - just-dom@2.1.2
+  - @just-dom/lucide@1.1.1
+  - @just-dom/router@1.0.0
+
 ## 2.3.3
 
 ### Patch Changes

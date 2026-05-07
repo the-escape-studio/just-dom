@@ -1,5 +1,11 @@
 # create-just-dom
 
+## 1.3.3
+
+### Patch Changes
+
+- chore: swap theme toggle button icon
+
 ## 1.3.2
 
 ### Patch Changes

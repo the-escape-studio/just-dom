@@ -1,6 +1,6 @@
 {
   "name": "create-just-dom",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "Scaffold a Vite app with just-dom, jd.config, and your choice of official plugins",
   "homepage": "https://just-dom.vercel.app/docs/jd-config",
   "repository": {

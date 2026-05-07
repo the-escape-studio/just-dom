@@ -324,7 +324,7 @@ export function themeToggleButton() {
       },
     },
     [
-      jd.span({ className: "inline dark:hidden" }, [
+      jd.span({ className: "hidden dark:inline" }, [
         jd.svg(
           {
             viewBox: "0 0 24 24",
@@ -344,7 +344,7 @@ export function themeToggleButton() {
           ],
         ),
       ]),
-      jd.span({ className: "hidden dark:inline" }, [
+      jd.span({ className: "inline dark:hidden" }, [
         jd.svg(
           {
             viewBox: "0 0 24 24",
@@ -371,7 +371,12 @@ export function themeToggleButton() {
 `
 }
 
-function buildMainSource({ cfgImport, mainEntryFile, cfgEntryFile, cssChoice }) {
+function buildMainSource({
+  cfgImport,
+  mainEntryFile,
+  cfgEntryFile,
+  cssChoice,
+}) {
   if (cssChoice === "none") {
     return `import "./style.css";
 import { createRoot } from "just-dom";

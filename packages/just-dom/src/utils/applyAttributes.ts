@@ -1,50 +1,50 @@
-import { tagIsCustomNS } from "./tags";
+import { elementIsSvgOrMathML } from "./tags"
 
 export const applyAttributes = (
   el: HTMLElement | SVGElement | MathMLElement,
   attributes: Record<string, any>
 ) => {
-  if (!attributes) return;
+  if (!attributes) return
 
   for (const [key, value] of Object.entries(attributes)) {
     if (value === null || value === undefined) {
-      el.removeAttribute(key);
-      continue;
+      el.removeAttribute(key)
+      continue
     }
 
     switch (true) {
       case key === "style" && typeof value === "object":
-        Object.assign(el.style, value);
-        break;
+        Object.assign(el.style, value)
+        break
       case key.startsWith("on") && typeof value === "function":
-        el.addEventListener(key.slice(2).toLowerCase(), value);
-        break;
+        el.addEventListener(key.slice(2).toLowerCase(), value)
+        break
       case key.startsWith("data-"):
         const dataKey = key
           .slice(5)
-          .replace(/-([a-z])/g, (_, c) => c.toUpperCase());
-        (el as HTMLElement).dataset[dataKey] = String(value);
-        break;
+          .replace(/-([a-z])/g, (_, c) => c.toUpperCase())
+        ;(el as HTMLElement).dataset[dataKey] = String(value)
+        break
       case key.startsWith("data") && !key.startsWith("data-"):
-        (el as HTMLElement).dataset[key.slice(4)] = String(value);
-        break;
+        ;(el as HTMLElement).dataset[key.slice(4)] = String(value)
+        break
       case typeof value === "boolean":
         if (value) {
-          el.setAttribute(key, "");
+          el.setAttribute(key, "")
         } else {
-          el.removeAttribute(key);
+          el.removeAttribute(key)
         }
-        break;
+        break
       default:
-        if (tagIsCustomNS(el.tagName)) {
-          el.setAttribute(key, String(value));
+        if (elementIsSvgOrMathML(el)) {
+          el.setAttribute(key, String(value))
         } else {
           if (key in el) {
-            (el as any)[key] = value;
+            ;(el as any)[key] = value
           } else {
-            el.setAttribute(key, String(value));
+            el.setAttribute(key, String(value))
           }
         }
     }
   }
-};
+}

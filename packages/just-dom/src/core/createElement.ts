@@ -3,28 +3,33 @@ import {
   JDCreateElementOptions,
   JDCreateElementChildren,
   JDTagsMap,
-} from "../types";
-import { createSmartElement, applyAttributes } from "../utils";
+} from "../types"
+import {
+  applyAttributes,
+  createSmartElement,
+  type JDElementNamespace,
+} from "../utils"
 
 export const createElement = <T extends JDAllTags>(
   tagName: T,
   options: JDCreateElementOptions<T>,
   children?: JDCreateElementChildren,
+  namespace?: JDElementNamespace
 ): JDTagsMap[T] => {
-  const el = createSmartElement(tagName) as JDTagsMap[T];
+  const el = createSmartElement(tagName, namespace) as JDTagsMap[T]
 
   // Applica gli attributi
   if (options) {
     if (options.ref) {
-      const { ref, ...restOptions } = options;
-      applyAttributes(el, restOptions);
+      const { ref, ...restOptions } = options
+      applyAttributes(el, restOptions)
       if (typeof ref === "function") {
-        ref(el);
+        ref(el)
       } else if (typeof ref === "object" && "current" in ref) {
-        ref.current = el;
+        ref.current = el
       }
     } else {
-      applyAttributes(el, options);
+      applyAttributes(el, options)
     }
   }
 
@@ -34,20 +39,20 @@ export const createElement = <T extends JDAllTags>(
       for (const child of children) {
         if (child) {
           if (typeof child === "string") {
-            el.appendChild(document.createTextNode(child));
+            el.appendChild(document.createTextNode(child))
           } else {
-            el.appendChild(child);
+            el.appendChild(child)
           }
         }
       }
     } else if (typeof children === "string") {
-      el.appendChild(document.createTextNode(children));
+      el.appendChild(document.createTextNode(children))
     } else {
       throw new Error(
-        "Invalid children type. Expected an array of elements or a string.",
-      );
+        "Invalid children type. Expected an array of elements or a string."
+      )
     }
   }
 
-  return el;
-};
+  return el
+}

@@ -173,7 +173,7 @@ createRoot(mount, app);`,
     fill: "none",
   },
   [
-    DOM.circle({
+    DOM.svgCircle({
       cx: "60",
       cy: "60",
       r: "50",
@@ -181,7 +181,7 @@ createRoot(mount, app);`,
       "stroke-width": "4",
       fill: "#eff6ff",
     }),
-    DOM.text(
+    DOM.svgText(
       {
         x: "60",
         y: "66",

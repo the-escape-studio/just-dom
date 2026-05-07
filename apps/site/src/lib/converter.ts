@@ -1,7 +1,39 @@
 import * as prettier from "prettier/standalone";
 import * as parserBabel from "prettier/parser-babel";
 import prettierPluginEstree from "prettier/plugins/estree";
+import {
+  JD_NAMESPACES,
+  elementIsSvgOrMathML,
+  svgTagToDomKey,
+} from "just-dom";
 import { mathmlTags, svgTags } from "@/lib/tags";
+
+/** DOM factory callee like `DOM.div` or `DOM["annotation-xml"]`, based on element namespace (fixes HTML vs SVG name clashes such as `a`). */
+function domCalleeForElement(el: Element, prefix: string): string {
+  const ns = el.namespaceURI;
+
+  if (ns === JD_NAMESPACES.svg) {
+    const svgTagKey = svgTags.find(
+      (t) => t.toLowerCase() === el.tagName.toLowerCase(),
+    );
+    const method = svgTagKey
+      ? svgTagToDomKey(svgTagKey)
+      : el.tagName.toLowerCase();
+    return `${prefix}.${method}`;
+  }
+
+  if (ns === JD_NAMESPACES.mathml) {
+    const mathTagKey = mathmlTags.find(
+      (t) => t.toLowerCase() === el.tagName.toLowerCase(),
+    );
+    const tag = mathTagKey ?? el.tagName.toLowerCase();
+    return /^[a-zA-Z_$][\w$]*$/.test(tag)
+      ? `${prefix}.${tag}`
+      : `${prefix}[${JSON.stringify(tag)}]`;
+  }
+
+  return `${prefix}.${el.tagName.toLowerCase()}`;
+}
 
 export const formatCode = async (code: string): Promise<string> => {
   try {
@@ -25,7 +57,7 @@ export const formatCode = async (code: string): Promise<string> => {
 
 export const getJsAttributeName = (
   htmlName: string,
-  tagName: string
+  el: Element,
 ): string => {
   // Gestione dei casi speciali più comuni
   const specialCases: Record<string, string> = {
@@ -116,10 +148,7 @@ export const getJsAttributeName = (
     nonce: "nonce",
   };
 
-  if (
-    svgTags.includes(tagName.toLowerCase() as keyof SVGElementTagNameMap) ||
-    mathmlTags.includes(tagName.toLowerCase() as keyof MathMLElementTagNameMap)
-  ) {
+  if (elementIsSvgOrMathML(el)) {
     return `"${htmlName}"`;
   } else if (specialCases[htmlName]) {
     return specialCases[htmlName];
@@ -133,14 +162,14 @@ export const convertHtmlToDom = async (html: string, prefix = "DOM") => {
   try {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, "text/html");
-    const element = doc.body.firstChild as HTMLElement;
+    const element = doc.body.firstChild as Element | null;
 
-    if (!element) return "";
+    if (!element || element.nodeType !== Node.ELEMENT_NODE) return "";
 
-    const convertElement = (el: HTMLElement): string => {
+    const convertElement = (el: Element): string => {
       const attributes = Array.from(el.attributes)
         .map((attr) => {
-          const jsAttrName = getJsAttributeName(attr.name, el.tagName);
+          const jsAttrName = getJsAttributeName(attr.name, el);
           return `${jsAttrName}: "${attr.value}"`;
         })
         .join(",");
@@ -152,7 +181,7 @@ export const convertHtmlToDom = async (html: string, prefix = "DOM") => {
             return text ? `" ${text}"` : null;
           }
           if (node.nodeType === Node.ELEMENT_NODE) {
-            return convertElement(node as HTMLElement);
+            return convertElement(node as Element);
           }
           return null;
         })
@@ -160,7 +189,7 @@ export const convertHtmlToDom = async (html: string, prefix = "DOM") => {
 
       const hasChildren = childNodes.length > 0;
 
-      let result = `${prefix}.${el.tagName.toLowerCase()}(`;
+      let result = `${domCalleeForElement(el, prefix)}(`;
 
       if (attributes) {
         result += `{`;

@@ -4,9 +4,9 @@ import {
   createFragment,
   createRef,
   createRoot,
-} from "./core";
-import { JDom } from "./types";
-import { allTags } from "./utils/tags";
+} from "./core"
+import { JDom } from "./types"
+import { htmlTags, mathmlTags, svgTags, svgTagToDomKey } from "./utils/tags"
 
 /**
  * @description A lightweight library for DOM manipulation
@@ -22,17 +22,32 @@ import { allTags } from "./utils/tags";
  */
 const DOM: JDom = {
   fragment: createFragment,
-} as JDom;
+} as JDom
 
-for (const tag of allTags) {
+for (const tag of htmlTags) {
   // @ts-ignore – TS non riesce a inferire K dentro il ciclo
-  DOM[tag] = (props, children) => createElement(tag, props, children);
+  DOM[tag] = (props, children) => createElement(tag, props, children, "html")
+}
+for (const tag of mathmlTags) {
+  // @ts-ignore
+  DOM[tag] = (props, children) => createElement(tag, props, children, "mathml")
+}
+for (const tag of svgTags) {
+  const key = svgTagToDomKey(tag)
+  // @ts-ignore
+  DOM[key] = (props, children) => createElement(tag, props, children, "svg")
 }
 
 // EXPORTS
-export { createElement, createElFromHTMLString, createRef, createRoot };
-export { definePlugin, withPlugins } from "./plugin";
-export type { JDPlugin, MergePluginExtensions } from "./plugin";
+export { createElement, createElFromHTMLString, createRef, createRoot }
+export {
+  svgTagToDomKey,
+  JD_NAMESPACES,
+  elementIsSvgOrMathML,
+} from "./utils/tags"
+export type { JDElementNamespace } from "./utils/tags"
+export { definePlugin, withPlugins } from "./plugin"
+export type { JDPlugin, MergePluginExtensions } from "./plugin"
 export type {
   JDom,
   JDAllTags,
@@ -40,6 +55,7 @@ export type {
   JDCreateElementOptions,
   JDCreateElementChildren,
   JDRef,
+  JDSvgDomKey,
   JDSvgPresentationAttributes,
-} from "./types";
-export default DOM;
+} from "./types"
+export default DOM

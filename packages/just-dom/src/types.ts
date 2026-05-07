@@ -118,11 +118,34 @@ export type JDCreateElementChildren =
 
 export type JDRef<T extends JDAllTags> = { current: JDTagsMap[T] | null };
 
-export type JDom = {
-  [K in JDAllTags]: (
+/** Keys used on `DOM` for SVG element factories (`svg` for the root; others prefixed with `svg`). */
+export type JDSvgDomKey<K extends SVGTag = SVGTag> = K extends "svg"
+  ? "svg"
+  : `svg${Capitalize<K>}`;
+
+type JDomHtml = {
+  [K in HTMLTag]: (
     props?: JDCreateElementOptions<K>,
     children?: JDCreateElementChildren
-  ) => JDTagsMap[K];
-} & {
-  fragment: typeof createFragment;
+  ) => HTMLElementTagNameMap[K];
 };
+
+type JDomMathML = {
+  [K in MathMLTag]: (
+    props?: JDCreateElementOptions<K>,
+    children?: JDCreateElementChildren
+  ) => MathMLElementTagNameMap[K];
+};
+
+type JDomSvg = {
+  [K in SVGTag as JDSvgDomKey<K>]: (
+    props?: JDCreateElementOptions<K>,
+    children?: JDCreateElementChildren
+  ) => SVGElementTagNameMap[K];
+};
+
+export type JDom = JDomHtml &
+  JDomMathML &
+  JDomSvg & {
+    fragment: typeof createFragment;
+  };

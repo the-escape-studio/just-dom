@@ -3,7 +3,7 @@ title: DOM Object
 description: The default export — create any element with a single function call
 ---
 
-The `DOM` object is the default export of Just DOM. It provides a method for every HTML, SVG, and MathML tag name, plus a `fragment` method.
+The `DOM` object is the default export of Just DOM. It provides a method for every HTML and MathML tag name, plus a `fragment` method. **SVG:** the root element is **`DOM.svg`**; all other SVG tags use the **`svg` prefix** (e.g. `DOM.svgCircle`) so they never clash with HTML helpers like `DOM.a` or `DOM.title`. Under the hood, each factory passes the correct element namespace (`html`, `svg`, or `mathml`) to [`createElement`](/docs/core-api/create-element), including for shared names such as `a` vs `svgA`.
 
 ## Import
 
@@ -70,10 +70,12 @@ DOM.section() DOM.article() DOM.aside()  DOM.details()
 
 ### SVG Tags
 
+SVG factories use `DOM.svg` for the root element; other tags are prefixed with `svg` in camelCase (`circle` → `svgCircle`):
+
 ```ts
-DOM.svg()     DOM.path()    DOM.circle()  DOM.rect()
-DOM.line()    DOM.polyline() DOM.polygon() DOM.ellipse()
-DOM.g()       DOM.text()    DOM.defs()    DOM.use()
+DOM.svg()      DOM.svgPath()   DOM.svgCircle()  DOM.svgRect()
+DOM.svgLine()  DOM.svgPolyline() DOM.svgPolygon() DOM.svgEllipse()
+DOM.svgG()     DOM.svgText()   DOM.svgDefs()    DOM.svgUse()
 // ... and all other standard SVG elements
 ```
 
@@ -138,9 +140,9 @@ const icon = DOM.svg(
     stroke: "currentColor",
   },
   [
-    DOM.circle({ cx: "12", cy: "12", r: "10" }),
-    DOM.line({ x1: "12", y1: "8", x2: "12", y2: "16" }),
-    DOM.line({ x1: "8", y1: "12", x2: "16", y2: "12" }),
+    DOM.svgCircle({ cx: "12", cy: "12", r: "10" }),
+    DOM.svgLine({ x1: "12", y1: "8", x2: "12", y2: "16" }),
+    DOM.svgLine({ x1: "8", y1: "12", x2: "16", y2: "12" }),
   ]
 );
 ```

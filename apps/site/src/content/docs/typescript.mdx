@@ -67,7 +67,11 @@ The library exports the following types for advanced use cases:
 | `JDTagsMap` | Maps tag names to their corresponding element types |
 | `JDCreateElementOptions<T>` | Props object for a given tag type |
 | `JDCreateElementChildren` | Valid children types (Node array or string) |
+| `JDElementNamespace` | `"html" \| "svg" \| "mathml"` — optional 4th argument to [`createElement`](/docs/core-api/create-element) when disambiguating shared tag names |
+| `JD_NAMESPACES` | Runtime URI map (`html`, `svg`, `mathml`) matching the DOM namespaces |
+| `elementIsSvgOrMathML` | Predicate on `Element.namespaceURI` — useful instead of tag-name checks for HTML/SVG overlaps (`a`, `script`, …) |
 | `JDRef<T>` | Ref object for a given tag type |
+| `JDSvgDomKey<T>` | Name of the `DOM` method for an SVG tag (`svg`, or `svg` + `Capitalize` for other tags) |
 | `JDom` | Type of the default `DOM` export object |
 
 ### Configured app DOM (`typeof jd`)

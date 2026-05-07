@@ -111,7 +111,7 @@ export const htmlTags: (keyof HTMLElementTagNameMap)[] = [
   "var",
   "video",
   "wbr",
-];
+]
 
 export const svgTags: (keyof SVGElementTagNameMap)[] = [
   "a",
@@ -177,7 +177,7 @@ export const svgTags: (keyof SVGElementTagNameMap)[] = [
   "tspan",
   "use",
   "view",
-];
+]
 
 export const mathmlTags: (keyof MathMLElementTagNameMap)[] = [
   "annotation",
@@ -210,37 +210,70 @@ export const mathmlTags: (keyof MathMLElementTagNameMap)[] = [
   "munder",
   "munderover",
   "semantics",
-];
+]
 
-export const allTags = [...htmlTags, ...svgTags, ...mathmlTags] as const;
+export const allTags = [...htmlTags, ...svgTags, ...mathmlTags] as const
 
-// NAMESPACES
-const NAMESPACES = {
+/** Runtime key on `DOM` for SVG factories. Root `svg` stays `svg`; others use `svg` + PascalCase (`circle` → `svgCircle`). */
+export function svgTagToDomKey<T extends keyof SVGElementTagNameMap>(
+  tag: T
+): T extends "svg" ? "svg" : `svg${Capitalize<T>}` {
+  if (tag === "svg")
+    return "svg" as T extends "svg" ? "svg" : `svg${Capitalize<T>}`
+  return `svg${tag.charAt(0).toUpperCase() + tag.slice(1)}` as T extends "svg"
+    ? "svg"
+    : `svg${Capitalize<T>}`
+}
+
+export const JD_NAMESPACES = {
   html: "http://www.w3.org/1999/xhtml",
   svg: "http://www.w3.org/2000/svg",
   mathml: "http://www.w3.org/1998/Math/MathML",
-};
+} as const
 
-function getNamespaceForTag(tagName: string) {
-  if (svgTags.includes(tagName as keyof SVGElementTagNameMap))
-    return NAMESPACES.svg;
-  if (mathmlTags.includes(tagName as keyof MathMLElementTagNameMap))
-    return NAMESPACES.mathml;
-  return NAMESPACES.html;
+/** Explicit namespace for factories (`DOM.svgCircle`, `DOM.a`, …). */
+export type JDElementNamespace = keyof typeof JD_NAMESPACES
+
+function matchesListedTag<const T extends string>(
+  list: readonly T[],
+  tagName: string
+): boolean {
+  const lower = tagName.toLowerCase()
+  return list.some((t) => t.toLowerCase() === lower)
 }
 
-export function tagIsCustomNS(tagName: string) {
-  const lowerTagName = tagName.toLowerCase();
-  return (
-    svgTags.includes(lowerTagName as keyof SVGElementTagNameMap) ||
-    mathmlTags.includes(lowerTagName as keyof MathMLElementTagNameMap)
-  );
+/** True when the node lives in SVG or MathML (not HTML). Prefer this over tag-name checks for names shared by HTML and SVG (`a`, `script`, …). */
+export function elementIsSvgOrMathML(el: Element): boolean {
+  const ns = el.namespaceURI
+  return ns === JD_NAMESPACES.svg || ns === JD_NAMESPACES.mathml
 }
 
-export function createSmartElement(tagName: string) {
-  if (tagIsCustomNS(tagName)) {
-    return document.createElementNS(getNamespaceForTag(tagName), tagName);
-  } else {
-    return document.createElement(tagName);
+export function createSmartElement(
+  tagName: string,
+  namespace?: JDElementNamespace
+): Element {
+  if (namespace === "svg") {
+    return document.createElementNS(JD_NAMESPACES.svg, tagName)
   }
+  if (namespace === "mathml") {
+    return document.createElementNS(JD_NAMESPACES.mathml, tagName)
+  }
+  if (namespace === "html") {
+    return document.createElement(tagName)
+  }
+
+  const lower = tagName.toLowerCase()
+
+  // Without hint, HTML tag names stay in the HTML namespace — covers `a`, `script`, `style`, `title`, …
+  if (htmlTags.includes(lower as keyof HTMLElementTagNameMap)) {
+    return document.createElement(tagName)
+  }
+  if (matchesListedTag(svgTags, tagName)) {
+    return document.createElementNS(JD_NAMESPACES.svg, tagName)
+  }
+  if (matchesListedTag(mathmlTags, tagName)) {
+    return document.createElementNS(JD_NAMESPACES.mathml, tagName)
+  }
+
+  return document.createElement(tagName)
 }

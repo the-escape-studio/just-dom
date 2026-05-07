@@ -18,8 +18,11 @@ function createElement<T extends JDAllTags>(
   tagName: T,
   options: JDCreateElementOptions<T>,
   children?: JDCreateElementChildren,
+  namespace?: JDElementNamespace,
 ): JDTagsMap[T];
 ```
+
+`JDElementNamespace` is `"html" | "svg" | "mathml"` — the same values the `DOM.<tag>()` factories pass internally.
 
 ## Parameters
 
@@ -28,6 +31,20 @@ function createElement<T extends JDAllTags>(
 | `tagName` | `T extends JDAllTags` | Any HTML, SVG, or MathML tag name |
 | `options` | `JDCreateElementOptions<T>` | Attributes, styles, events, data attributes, and ref |
 | `children` | `JDCreateElementChildren` | Optional children (array of nodes/strings, or a single string) |
+| `namespace` | `JDElementNamespace` | **Optional.** Forces the element namespace. Omit it for normal HTML tags. Use `"svg"` / `"mathml"` when the tag string is shared with HTML (e.g. `"a"`, `"script"`, `"title"`) but you need the SVG or MathML element. |
+
+## Namespace and shared tag names
+
+Several tag names exist in both HTML and SVG (`a`, `script`, `style`, `title`). **`DOM.a` and `DOM.svgA` both call `createElement` with `"a"`**, so the library resolves the namespace via the fourth argument — you should do the same when calling `createElement` directly:
+
+```ts
+import { createElement } from "just-dom";
+
+const htmlLink = createElement("a", { href: "/home" }, "Home");
+const svgLink = createElement("a", { href: "#section" }, "Jump", "svg");
+```
+
+If you omit `namespace`, unknown tag names fall back to inference: HTML-listed names use the HTML namespace; remaining names that appear only in SVG or MathML lists use `createElementNS`.
 
 ## Returns
 

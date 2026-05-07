@@ -11,9 +11,11 @@ description: Lucide SVG icons plugin for Just DOM
 @just-dom/lucide
 ```
 
-`lucide` is included as a dependency and will be installed automatically.
+`lucide` is a dependency of `@just-dom/lucide`, so you do not need to add the `lucide` package yourself when you only install the plugin.
 
-For a multi-file app, add Lucide next to other plugins in **[`jd.config.ts`](/docs/jd-config)**. To scaffold **Vite + TypeScript** with that layout, use **[`create-just-dom`](/docs/jd-config#start-a-new-project)**.
+For a multi-file app, register Lucide in **[`jd.config.ts`](/docs/jd-config)** like any other plugin. To scaffold **Vite** with that layout, use **[`create-just-dom`](/docs/jd-config#start-a-new-project)**.
+
+If you select the Lucide plugin in `create-just-dom` (or pass `--plugins=lucide`), the generated `jd.config` uses **`lucidePlugin`** (the full icon set) for a working starter. For smaller production bundles, replace it with **`createLucidePlugin`** and import only the icons you need, as in [Quick Start](#quick-start) and [Tree-Shakeable](#tree-shakeable-recommended).
 
 ## Quick Start
 
@@ -72,13 +74,15 @@ jd.lucide(name, options?): SVGSVGElement
 
 ### LucideIconOptions
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
+Optional attributes merged onto the root `<svg>`. If you omit a field, Lucide’s defaults apply (same as the `lucide` package’s `createElement`: 24×24 viewport, `stroke: currentColor`, `stroke-width: 2`, round caps/joins, etc.).
+
+| Property | Type | When omitted | Description |
+|----------|------|--------------|-------------|
 | `size` | `number` | `24` | Width and height in pixels |
-| `color` | `string` | `"currentColor"` | Stroke color |
-| `strokeWidth` | `number` | `2` | Stroke width |
-| `absoluteStrokeWidth` | `boolean` | `false` | When `true`, stroke width doesn't scale with size |
-| `className` | `string` | — | CSS class to apply to the SVG element |
+| `color` | `string` | `currentColor` | Maps to the SVG `stroke` attribute |
+| `strokeWidth` | `number` | `2` | Maps to `stroke-width` |
+| `absoluteStrokeWidth` | `boolean` | `false` | If `true`, adjusts `stroke-width` when `size` differs from 24 so stroke thickness stays visually consistent |
+| `className` | `string` | — | Maps to the `class` attribute on the SVG |
 
 ## Usage
 
@@ -102,7 +106,7 @@ jd.lucide("Missing");   // TypeScript error!
 
 ### All Icons (Prototyping)
 
-For quick prototyping, the `lucidePlugin` export includes all 1400+ icons with full autocompletion:
+For quick prototyping, the `lucidePlugin` export registers **the full Lucide icon set** from `lucide` (same keys as `import { icons } from "lucide"`) with full name autocompletion:
 
 ```ts
 import DOM, { withPlugins } from "just-dom";

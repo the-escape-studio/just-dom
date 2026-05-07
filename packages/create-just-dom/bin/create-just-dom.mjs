@@ -389,7 +389,11 @@ function buildStyleCss(cssChoice) {
     return `@import "tailwindcss";\n`
   }
   if (cssChoice === "tailwind-daisyui") {
-    return `@import "tailwindcss";\n@plugin "daisyui/index.js";\n`
+    return `@import "tailwindcss";\n@plugin "daisyui/index.js" {
+  themes:
+    light --default,
+    dark;
+}\n`
   }
   return `:root {
   font-family: system-ui, -apple-system, sans-serif;
@@ -574,7 +578,9 @@ async function promptKeynavScreen(opts) {
     if (typeof process.stdin.setRawMode !== "function") {
       process.stdout.write("\n")
       if (kind === "radio") {
-        resolve(state[Math.min(defaultIndex, state.length - 1)]?.id ?? items[0].id)
+        resolve(
+          state[Math.min(defaultIndex, state.length - 1)]?.id ?? items[0].id
+        )
       } else {
         resolve([])
       }
@@ -734,8 +740,10 @@ async function main() {
 
   assertValidProjectName(projectName)
 
-  const { useTypescript, selectedPlugins, cssChoice } =
-    await resolveChoices(parsed, canPrompt)
+  const { useTypescript, selectedPlugins, cssChoice } = await resolveChoices(
+    parsed,
+    canPrompt
+  )
 
   const projectDir = resolve(cwd, projectName)
   assertScaffoldTargetDir(projectDir, projectName)

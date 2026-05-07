@@ -4,7 +4,7 @@ Lucide icons as a [just-dom](https://github.com/the-escape-studio/just-dom) plug
 
 - **Documentation:** [Lucide plugin](https://just-dom.vercel.app/docs/official-plugins/lucide)
 - **npm:** `@just-dom/lucide`
-- **Peer dependency:** `just-dom`
+- **Peer dependency:** `just-dom` `>=2.0.0`
 
 ## Install
 
@@ -33,4 +33,4 @@ Register Lucide next to other plugins in one module and import **`jd`** everywhe
 - **[App setup (jd.config)](https://just-dom.vercel.app/docs/jd-config)**
 - New app: **`npm create just-dom@latest`** ([CLI](https://just-dom.vercel.app/docs/jd-config#start-a-new-project))
 
-See the site docs for **`lucidePlugin`** (all icons) vs **`createLucidePlugin`** (tree-shake friendly).
+**`create-just-dom`** adds **`lucidePlugin`** (full icon set) when you pick the Lucide plugin. For production, swap it for **`createLucidePlugin`** and import only the icons you use — see the site docs.

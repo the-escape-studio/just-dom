@@ -1,5 +1,15 @@
 # create-just-dom
 
+## 1.3.2
+
+### Patch Changes
+
+- 54c9bf4: Fix element namespace handling for HTML/SVG/MathML (createElement, DOM factories, applyAttributes); align SVG DOM keys, converter, scaffold DaisyUI themes, and docs
+- Starter templates: Tailwind plain scaffold removes fixed gray palette utilities from generated `main` (layout + neutral typography); Daisy scaffold uses semantic Daisy tokens (`bg-base-*`, `text-base-content`, styled `<code>`).
+- Daisy scaffold adds `@custom-variant dark` mapped to `[data-theme=dark]` so Tailwind `dark:` utilities align with DaisyUI themes.
+- Daisy scaffold adds light/dark theme toggle (moon/sun SVG icons), persists preference under **`jd-theme`** in `localStorage`, syncs **`data-theme`** on `<html>`.
+- Refactor generated entry template builder (`buildMainSource`) shared between `.ts` and `.js`.
+
 ## 1.2.0
 
 ### Minor Changes

@@ -1,5 +1,13 @@
 # @just-dom/lucide
 
+## 1.1.1
+
+### Patch Changes
+
+- 54c9bf4: Fix element namespace handling for HTML/SVG/MathML (createElement, DOM factories, applyAttributes); align SVG DOM keys, converter, scaffold DaisyUI themes, and docs
+- Updated dependencies [54c9bf4]
+  - just-dom@2.1.1
+
 ## 1.0.2
 
 ### Patch Changes

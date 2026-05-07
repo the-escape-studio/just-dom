@@ -18,6 +18,7 @@
 import { spawnSync } from "node:child_process"
 import {
   existsSync,
+  mkdirSync,
   readFileSync,
   readdirSync,
   rmSync,
@@ -285,37 +286,94 @@ export default defineConfig({
 });
 `
 
-function mainTs(cfgExt, cssChoice) {
-  const cfgImport = cfgExt === "ts" ? "./jd.config" : "./jd.config.js"
-  const withTailwind =
-    cssChoice === "tailwind" || cssChoice === "tailwind-daisyui"
-  const daisyButtonLine =
-    cssChoice === "tailwind-daisyui"
-      ? `      jd.button({ className: "btn btn-primary mt-4" }, ["Click me"]),\n`
-      : ""
-  if (withTailwind) {
-    return `import "./style.css";
-import { createRoot } from "just-dom";
-import { jd } from "${cfgImport}";
+/** Theme + DaisyUI toggle — written to \`src/components/theme-toggle.{ts,js}\` when using daisyUI. */
+function buildThemeToggleSource(useTypescript) {
+  const jdConfigImport = useTypescript ? "../jd.config" : "../jd.config.js"
+  const themeParam = useTypescript ? "theme: string" : "theme"
+  return `import { jd } from "${jdConfigImport}";
 
-createRoot(
-  "app",
-  jd.div({ className: "min-h-screen bg-gray-50 font-sans" }, [
-    jd.div({ className: "max-w-2xl mx-auto px-6 py-8" }, [
-      jd.h1({ className: "text-3xl font-bold text-gray-900 mb-3" }, ["Vite + Just DOM"]),
-      jd.p({ className: "text-gray-600 leading-relaxed" }, [
-        "Edit ",
-        jd.code({ className: "bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-sm font-mono" }, ["src/main.${cfgExt}"]),
-        " to get started. Add plugins in ",
-        jd.code({ className: "bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-sm font-mono" }, ["src/jd.config.${cfgExt}"]),
-        ".",
+const THEME_KEY = "jd-theme";
+
+export function readStoredTheme() {
+  try {
+    const v = localStorage.getItem(THEME_KEY);
+    if (v === "dark" || v === "light") return v;
+  } catch {}
+  return "light";
+}
+
+export function applyTheme(${themeParam}) {
+  document.documentElement.setAttribute("data-theme", theme);
+  try {
+    localStorage.setItem(THEME_KEY, theme);
+  } catch {}
+}
+
+export function themeToggleButton() {
+  return jd.button(
+    {
+      type: "button",
+      className: "btn btn-ghost btn-circle",
+      ariaLabel: "Toggle theme",
+      onclick: () => {
+        const next =
+          document.documentElement.getAttribute("data-theme") === "dark"
+            ? "light"
+            : "dark";
+        applyTheme(next);
+      },
+    },
+    [
+      jd.span({ className: "inline dark:hidden" }, [
+        jd.svg(
+          {
+            viewBox: "0 0 24 24",
+            width: "20",
+            height: "20",
+            fill: "none",
+            stroke: "currentColor",
+            strokeWidth: "2",
+            strokeLinecap: "round",
+            strokeLinejoin: "round",
+            ariaHidden: "true",
+          },
+          [
+            jd.svgPath({
+              d: "M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9",
+            }),
+          ],
+        ),
       ]),
-${daisyButtonLine}    ]),
-  ]),
-);
+      jd.span({ className: "hidden dark:inline" }, [
+        jd.svg(
+          {
+            viewBox: "0 0 24 24",
+            width: "20",
+            height: "20",
+            fill: "none",
+            stroke: "currentColor",
+            strokeWidth: "2",
+            strokeLinecap: "round",
+            strokeLinejoin: "round",
+            ariaHidden: "true",
+          },
+          [
+            jd.svgCircle({ cx: "12", cy: "12", r: "4" }),
+            jd.svgPath({
+              d: "M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M19.07 4.93l-1.41 1.41M6.34 17.66l-1.41 1.41",
+            }),
+          ],
+        ),
+      ]),
+    ],
+  );
+}
 `
-  }
-  return `import "./style.css";
+}
+
+function buildMainSource({ cfgImport, mainEntryFile, cfgEntryFile, cssChoice }) {
+  if (cssChoice === "none") {
+    return `import "./style.css";
 import { createRoot } from "just-dom";
 import { jd } from "${cfgImport}";
 
@@ -325,63 +383,101 @@ createRoot(
     jd.h1({}, ["Vite + Just DOM"]),
     jd.p({}, [
       "Edit ",
-      jd.code({}, ["src/main.${cfgExt}"]),
+      jd.code({}, ["${mainEntryFile}"]),
       " to get started. Add plugins in ",
-      jd.code({}, ["src/jd.config.${cfgExt}"]),
+      jd.code({}, ["${cfgEntryFile}"]),
       ".",
+    ]),
+  ]),
+);
+`
+  }
+
+  if (cssChoice === "tailwind") {
+    return `import "./style.css";
+import { createRoot } from "just-dom";
+import { jd } from "${cfgImport}";
+
+createRoot(
+  "app",
+  jd.div({ className: "min-h-screen font-sans" }, [
+    jd.div({ className: "max-w-2xl mx-auto px-6 py-8" }, [
+      jd.h1({ className: "text-3xl font-bold mb-3" }, ["Vite + Just DOM"]),
+      jd.p({ className: "leading-relaxed" }, [
+        "Edit ",
+        jd.code({ className: "font-mono rounded px-1.5 py-0.5 text-sm" }, ["${mainEntryFile}"]),
+        " to get started. Add plugins in ",
+        jd.code({ className: "font-mono rounded px-1.5 py-0.5 text-sm" }, ["${cfgEntryFile}"]),
+        ".",
+      ]),
+    ]),
+  ]),
+);
+`
+  }
+
+  return `import "./style.css";
+import { createRoot } from "just-dom";
+import { jd } from "${cfgImport}";
+import {
+  applyTheme,
+  readStoredTheme,
+  themeToggleButton,
+} from "./components/theme-toggle";
+
+applyTheme(readStoredTheme());
+
+createRoot(
+  "app",
+  jd.div({ className: "min-h-screen bg-base-100 text-base-content font-sans" }, [
+    jd.div({ className: "max-w-2xl mx-auto px-6 py-8" }, [
+      jd.div({ className: "flex items-center justify-between gap-3 mb-3" }, [
+        jd.h1({ className: "text-3xl font-bold" }, ["Vite + Just DOM"]),
+        themeToggleButton(),
+      ]),
+      jd.p({ className: "text-base-content/70 leading-relaxed" }, [
+        "Edit ",
+        jd.code(
+          {
+            className:
+              "bg-base-200 text-base-content rounded px-1.5 py-0.5 text-sm font-mono",
+          },
+          ["${mainEntryFile}"],
+        ),
+        " to get started. Add plugins in ",
+        jd.code(
+          {
+            className:
+              "bg-base-200 text-base-content rounded px-1.5 py-0.5 text-sm font-mono",
+          },
+          ["${cfgEntryFile}"],
+        ),
+        ".",
+      ]),
+      jd.button({ className: "btn btn-primary mt-4" }, ["Click me"]),
     ]),
   ]),
 );
 `
 }
 
+function mainTs(cfgExt, cssChoice) {
+  const cfgImport = cfgExt === "ts" ? "./jd.config" : "./jd.config.js"
+  return buildMainSource({
+    cfgImport,
+    mainEntryFile: `src/main.${cfgExt}`,
+    cfgEntryFile: `src/jd.config.${cfgExt}`,
+    cssChoice,
+  })
+}
+
 function mainJs(cssChoice) {
-  const withTailwind =
-    cssChoice === "tailwind" || cssChoice === "tailwind-daisyui"
-  const daisyButtonLine =
-    cssChoice === "tailwind-daisyui"
-      ? `      jd.button({ className: "btn btn-primary mt-4" }, ["Click me"]),\n`
-      : ""
-  if (withTailwind) {
-    return `import "./style.css";
-import { createRoot } from "just-dom";
-import { jd } from "./jd.config.js";
-
-createRoot(
-  "app",
-  jd.div({ className: "min-h-screen bg-gray-50 font-sans" }, [
-    jd.div({ className: "max-w-2xl mx-auto px-6 py-8" }, [
-      jd.h1({ className: "text-3xl font-bold text-gray-900 mb-3" }, ["Vite + Just DOM"]),
-      jd.p({ className: "text-gray-600 leading-relaxed" }, [
-        "Edit ",
-        jd.code({ className: "bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-sm font-mono" }, ["src/main.js"]),
-        " to get started. Add plugins in ",
-        jd.code({ className: "bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-sm font-mono" }, ["src/jd.config.js"]),
-        ".",
-      ]),
-${daisyButtonLine}    ]),
-  ]),
-);
-`
-  }
-  return `import "./style.css";
-import { createRoot } from "just-dom";
-import { jd } from "./jd.config.js";
-
-createRoot(
-  "app",
-  jd.div({ className: "page" }, [
-    jd.h1({}, ["Vite + Just DOM"]),
-    jd.p({}, [
-      "Edit ",
-      jd.code({}, ["src/main.js"]),
-      " to get started. Add plugins in ",
-      jd.code({}, ["src/jd.config.js"]),
-      ".",
-    ]),
-  ]),
-);
-`
+  return buildMainSource({
+    cfgImport: "./jd.config.js",
+    mainEntryFile: "src/main.js",
+    cfgEntryFile: "src/jd.config.js",
+    cssChoice,
+  })
 }
 
 function buildStyleCss(cssChoice) {
@@ -393,7 +489,10 @@ function buildStyleCss(cssChoice) {
   themes:
     light --default,
     dark;
-}\n`
+}
+
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+`
   }
   return `:root {
   font-family: system-ui, -apple-system, sans-serif;
@@ -809,6 +908,15 @@ async function main() {
     useTypescript ? mainTs(ext, cssChoice) : mainJs(cssChoice),
     "utf8"
   )
+  if (cssChoice === "tailwind-daisyui") {
+    const componentsDir = join(projectDir, "src", "components")
+    mkdirSync(componentsDir, { recursive: true })
+    writeFileSync(
+      join(componentsDir, `theme-toggle.${ext}`),
+      buildThemeToggleSource(useTypescript),
+      "utf8"
+    )
+  }
   writeFileSync(
     join(projectDir, "src", "style.css"),
     buildStyleCss(cssChoice),

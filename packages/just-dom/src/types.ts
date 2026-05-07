@@ -95,6 +95,9 @@ export type JDSvgPresentationAttributes = {
   filter?: string;
   display?: string;
   visibility?: string;
+  /** SVG `<path>` (spesso assente da `keyof` sulle mappe DOM incrociate). */
+  d?: string;
+  pathLength?: string | number;
 };
 
 type JDSvgOptionsAugment<T extends JDAllTags> = T extends SVGTag

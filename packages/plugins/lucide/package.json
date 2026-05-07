@@ -1,6 +1,6 @@
 {
   "name": "@just-dom/lucide",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Lucide icons plugin for just-dom",
   "homepage": "https://just-dom.vercel.app/docs/official-plugins/lucide",
   "repository": {
@@ -39,7 +39,7 @@
     "build": "tsup src/index.ts --format cjs,esm --dts"
   },
   "peerDependencies": {
-    "just-dom": ">=2.0.0"
+    "just-dom": ">=2.1.1"
   },
   "dependencies": {
     "lucide": "^0.577.0"

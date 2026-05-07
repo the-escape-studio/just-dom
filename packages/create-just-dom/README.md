@@ -42,7 +42,7 @@ npm install   # if Vite did not install deps yet
 npm run dev
 ```
 
-With **`--css=tailwind`** or **`tailwind-daisyui`**, the CLI adds **`tailwindcss`**, **`@tailwindcss/vite`**, wires **`vite.config`**, and generates a starter **`style.css`** using Tailwind v4 (`@import "tailwindcss"`). DaisyUI adds the `@plugin "daisyui/index.js"` line.
+With **`--css=tailwind`**, the CLI adds **`tailwindcss`**, **`@tailwindcss/vite`**, wires **`vite.config`**, and generates **`style.css`** with `@import "tailwindcss"`. With **`--css=tailwind-daisyui`**, it also installs DaisyUI, enables **`light`** / **`dark`** themes via `@plugin "daisyui/index.js"`, adds **`@custom-variant dark`** so Tailwind’s **`dark:`** prefix tracks **`data-theme="dark"`** on `<html>`, and scaffolds a **theme toggle** (persisted under **`jd-theme`** in **`localStorage`**).
 
 If **stdin is not a TTY** and you omit flags, defaults are **TypeScript**, **no plugins**, and **no CSS framework**.
 

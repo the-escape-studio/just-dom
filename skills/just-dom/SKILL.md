@@ -1,6 +1,6 @@
 ---
 name: just-dom
-description: "Guides end users of the just-dom library—Vite scaffold via npm create just-dom@latest, jd.config, withPlugins/definePlugin, DOM factories, createRoot, refs, fragments, and scoped @just-dom packages (router, signals, lucide). For a new app from scratch, lead with the create-just-dom CLI before manual setup. App structure: PascalCase reusable UI units, one per kebab-case file under components/. Use when building or explaining a just-dom app, jd.config, plugins, routing, signals, or Lucide icons."
+description: "Guides end users of the just-dom library—prefer declarative jd/DOM trees, inline nested children, Array.map for lists, and createRef for imperative hooks. Vite scaffold npm create just-dom@latest, jd.config, withPlugins, scoped @just-dom packages. New app: CLI first. PascalCase components, kebab-case files under components/. Use when building just-dom UIs, jd.config, router, signals, or Lucide."
 ---
 
 # just-dom (libreria, CLI, plugin)
@@ -106,6 +106,35 @@ export type Jd = typeof jd;
 1. **PascalCase** per le unità riusabili (funzioni che restituiscono `HTMLElement` o alberi just-dom): es. `Header`, `TodoItem`.
 2. **Un componente per file** sotto **`components/`**, nome file in **kebab-case** (es. `components/header.ts`, `components/todo-list.ts`), con **export** riutilizzabili.
 
+## Stile dichiarativo (da preferire)
+
+Orientare l’implementazione verso un **albero UI leggibile** costruito con le fabbriche **`jd` / `DOM`**, invece di catene lunghe di `document.createElement`, `appendChild` e mutazioni manuali quando l’obiettivo è solo costruire markup.
+
+1. **Dichiarativo:** esprimere la vista come **annidamento di chiamate** `jd.div({ … }, [ figli ])` (o equivalenti) così struttura e gerarchia restano visibili in un colpo d’occhio. Estrarre sotto-funzioni (`TodoItem`, `Toolbar`) quando un ramo diventa troppo denso, non una variabile intermedia per ogni nodo foglia.
+2. **Figli inline:** quando la leggibilità lo consente, tenere **array di figli** direttamente nel secondo argomento del genitore, mescolando testo, elementi annidati e **espressioni condizionali** (`cond ? jd.span(...) : null`) nello stesso array — coerente con `null`/`undefined` tra i figli ignorati.
+3. **Liste con `map`:** per collezioni usare **`items.map((item) => jd.li({}, …))`** (o il tag appropriato) nell’array dei figli del contenitore (`ul`, `ol`, elenco in `div`, ecc.). Evitare loop imperativi che solo `appendChild` se il risultato è una lista omogenea di nodi creati allo stesso modo.
+4. **Ref (`createRef` / callback):** promuovere i **ref** per focus, valori di input, **canvas**, scroll, misure, o aggiornamenti puntuali (es. `listRef.current?.appendChild(...)` dopo il mount). **`createRef<"tag">`** per accesso dagli handler; **callback ref** per setup al momento della creazione (o con `effect` di `@just-dom/signals`).
+
+Esempio compatto (pattern da favorire):
+
+```ts
+import { createRef } from "just-dom";
+import { jd } from "./jd.config";
+
+export function ItemList(items: { id: string; label: string }[]) {
+  const listRef = createRef<"ul">();
+  return jd.section({}, [
+    jd.h2({}, ["Elenco"]),
+    jd.ul(
+      { ref: listRef },
+      items.map((item) =>
+        jd.li({ "data-id": item.id }, [jd.span({}, [item.label])]),
+      ),
+    ),
+  ]);
+}
+```
+
 ## CLI `create-just-dom`
 
 ```bash
@@ -142,6 +171,7 @@ Registrare i plugin **solo** in **`jd.config`** tramite `withPlugins`.
 
 ## Cosa evitare
 
+- Costruire liste con **solo** loop `createElement` + `appendChild` quando un **`map`** nel figlio del contenitore è più chiaro e allineato allo stile dichiarativo.
 - Confondere **altre CLI** di tooling del sito doc con **`create-just-dom`** — il comando per un nuovo progetto è **`npm create just-dom@latest`**.
 - Usare **`DOM`** al posto di **`jd`** nei file dell’app quando sono attivi plugin: si perdono i metodi aggiunti (`routerLink`, `lucide`, ecc.).
 - Avviare un nuovo progetto appena con **`npm create vite@latest`** ignorando **`npm create just-dom@latest`** quando serve proprio lo scaffold just-dom.

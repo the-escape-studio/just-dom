@@ -15,6 +15,7 @@ Monorepo for **just-dom** and official plugins. Documentation, guides, and the p
 | `apps/site` | Documentation site and playground (Fumadocs + Next.js) |
 | `packages/ui` | Internal UI for the site |
 | `packages/eslint-config` / `packages/typescript-config` | Shared workspace tooling |
+| `skills/` | Agent Skills — `npx skills add the-escape-studio/just-dom` (vedi [skills/README.md](skills/README.md)) |
 
 ## Development
 

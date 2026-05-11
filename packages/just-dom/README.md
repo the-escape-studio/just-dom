@@ -41,3 +41,13 @@ The CLI scaffolds **`jd.config`**, optional **`@just-dom/*` plugins**, and optio
 ## Official plugins
 
 Published under **`@just-dom/*`** (e.g. [`@just-dom/lucide`](https://just-dom.vercel.app/docs/official-plugins/lucide), [`@just-dom/router`](https://just-dom.vercel.app/docs/official-plugins/router)). List and authoring notes live in the monorepo [`packages/plugins/README.md`](https://github.com/the-escape-studio/just-dom/blob/main/packages/plugins/README.md).
+
+## Agent skill (Cursor and other agents)
+
+Install the **just-dom** agent skill from the monorepo:
+
+```bash
+npx skills add the-escape-studio/just-dom
+```
+
+More options: [`skills/README.md`](https://github.com/the-escape-studio/just-dom/blob/main/skills/README.md) in the repository.

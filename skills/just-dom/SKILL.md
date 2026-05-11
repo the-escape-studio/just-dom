@@ -1,30 +1,120 @@
 ---
 name: just-dom
-description: Guides use of the just-dom DOM library, create-just-dom Vite scaffold CLI, jd.config + withPlugins, and @just-dom/* official plugins. Prefer in-repo MDX under apps/site/src/content/docs when editing or answering from this repository. Use when implementing or explaining just-dom, jd.config, npm create just-dom, DOM tag factories, createRoot, definePlugin/withPlugins, router/signals/lucide plugins, or monorepo paths under packages/just-dom and packages/plugins.
+description: Guides end users of the just-dom library—Vite scaffold via npm create just-dom@latest, jd.config, withPlugins/definePlugin, DOM factories, createRoot, refs, fragments, and @just-dom/* plugins (router, signals, lucide). For a new app from scratch, lead with the create-just-dom CLI before manual setup. App structure: PascalCase reusable UI units, one per kebab-case file under components/. Use when building or explaining a just-dom app, jd.config, plugins, routing, signals, or Lucide icons.
 ---
 
 # just-dom (libreria, CLI, plugin)
 
-## Riferimenti rapidi
+## Progetto da zero — cosa fare per primissima cosa
 
-- **Documentazione nel repo (fonte per il sito):** `apps/site/src/content/docs/` — pagine **MDX** (Fumadocs). Ordine e indice: `meta.json` nella stessa cartella; sottocartelle **`core-api/`**, **`plugin-api/`**, **`official-plugins/`** (es. `router.mdx`, `signals.mdx`, `lucide.mdx`). Per argomenti generali: `index.mdx`, `installation.mdx`, `getting-started.mdx`, `jd-config.mdx`, `typescript.mdx`, `create-a-plugin.mdx`.
-- **Docs pubbliche (stesso contenuto deployato):** [just-dom.vercel.app](https://just-dom.vercel.app)
-- **Repo:** [github.com/the-escape-studio/just-dom](https://github.com/the-escape-studio/just-dom)
-- **Monorepo:** `packages/just-dom` (npm `just-dom`), `packages/create-just-dom`, `packages/plugins/*`, app docs in `apps/site`
+Se l’utente chiede di **creare un progetto just-dom da zero**, **partire sempre dalla CLI ufficiale**: far eseguire (o proporre e poi eseguire, secondo le regole dell’ambiente) **`npm create just-dom@latest`** con il nome cartella appropriato, oppure **`.`** se la directory è vuota.
 
-## Uso dell'agente
+- **Non** impostare a mano Vite + `just-dom` + `jd.config` come flusso predefinito se la CLI può farlo, salvo che l’utente chieda esplicitamente integrazione in un repo esistente, vincoli che escludono lo scaffold, o dopo che la CLI è stata proposta e rifiutata.
+- Dopo lo scaffold: `cd` nella cartella del progetto, dipendenze se serve, **`npm run dev`** (o equivalente), poi implementare le feature richieste usando **`jd`** da `jd.config`.
 
-Quando lavori **in questo repository**, leggere/aggiornare la doc in **`apps/site/src/content/docs/`** prima di inventare API o URL; il sito è generato da quei file.
+Ordine tipico del comando:
 
-## Libreria core
+```bash
+npm create just-dom@latest <nome-cartella>
+# oppure, directory corrente vuota:
+npm create just-dom@latest .
+```
 
-- **ESM/CJS** con tipi TypeScript.
-- **Import tipico:** `import DOM, { createRoot, createRef, createElement, createFragment, withPlugins, definePlugin } from "just-dom"`.
-- **Fabbriche tag:** `DOM.div(...)`, `DOM.span(...)`, ecc.; supporto **HTML**, **SVG** (alcuni tag espongono chiavi DOM diverse, vedi export `svgTagToDomKey`), **MathML** (`fragment` per liste di figli).
-- **`createRoot(containerId | HTMLElement, rootElement)`:** monta aggiungendo il root al container (vedi docs `create-root`).
-- **Plugin runtime:** `withPlugins(domBase, plugins)` unisce le estensioni restituite da `plugin.extend()` sull'istanza DOM; **`definePlugin`** per definire un plugin tipizzato (`name`, `extend` → oggetto di metodi).
+Per automatismi / non interattivo, usare i flag nella sezione **CLI `create-just-dom`** qui sotto.
 
-Pattern consigliato nelle app: un solo modulo **`jd.config.ts` / `jd.config.js`** che esporta `jd = withPlugins(DOM, [...])` e importare **`jd`** da lì in `main` e nei moduli UI.
+## Documentazione
+
+- **Sito ufficiale:** [just-dom.vercel.app](https://just-dom.vercel.app) — guide, API reference, plugin.
+- **Codice sorgente (riferimento):** [github.com/the-escape-studio/just-dom](https://github.com/the-escape-studio/just-dom)
+
+Per approfondire firme, errori ed esempi, usare le pagine **/docs/** sul sito (es. [Getting Started](https://just-dom.vercel.app/docs/getting-started), [jd.config](https://just-dom.vercel.app/docs/jd-config)).
+
+---
+
+## Libreria — in sintesi
+
+- **Niente virtual DOM**: si costruisce il **DOM reale**. Nessuna dipendenza runtime aggiuntiva sul core; bundle compatto (ordine di grandezza ~20KB nella doc).
+- **Import:** `import DOM from "just-dom"` (default = fabbriche per ogni tag); named: `createRoot`, `createRef`, `createElement`, `withPlugins`, `definePlugin`, `createElFromHTMLString`, tipi, ecc.
+- **Figli (`children`):** array di `Node | string | null | undefined` oppure una singola `string`. `null`/`undefined` nell’array utile per **render condizionale**.
+
+### Oggetto `props` unificato
+
+- Attributi nativi (`className`, `href`, …).
+- **`style`:** `Partial<CSSStyleDeclaration>`.
+- **Eventi:** **`on*`** (`onclick`, `oninput`, …).
+- **`data-*`:** chiavi stringa (es. `"data-id"`).
+- **`ref`:** oggetto `JDRef<T>` oppure callback `(el) => void`.
+- **Attributi booleani:** `true` imposta, `false` rimuove.
+
+### `createRoot`
+
+- `createRoot(container: string | HTMLElement, rootEl: HTMLElement): void` — montaggio nel container (id o elemento).
+- **Errore** se l’id non esiste, l’elemento non si trova, o il riferimento è `null`.
+- Con plugin: importare **`createRoot`** da `"just-dom"` e costruire l’albero con **`jd`** da `./jd.config`.
+
+### Ref
+
+- **`createRef<"tag">()`:** `.current` tipizzato; `null` fino al mount.
+- **Callback ref:** eseguita in modo sincrono dopo gli attributi, **prima** dei figli; adatta a setup una tantum o a `effect` di `@just-dom/signals` legato al nodo.
+
+### `DOM.fragment`
+
+- `DocumentFragment` per raggruppare nodi **senza** elemento wrapper aggiuntivo.
+
+### `createElFromHTMLString`
+
+- Parsing HTML nel browser; utili soprattutto i nodi figli del **body** (il contenuto `head` non viene usato come descritto in doc).
+- Restituisce un `DocumentFragment`; dopo `appendChild` sul fragment, i figli si spostano nel DOM parent (comportamento standard).
+
+### Fabbriche tag, SVG e MathML
+
+- **HTML + MathML:** `DOM.<tag>` (es. `DOM.div`, `DOM.math`).
+- **SVG:** root **`DOM.svg`**; altri tag: prefisso **`svg`** + CamelCase (es. `DOM.svgCircle`). Per `<a>` in SVG usare **`DOM.svgA`** per non confonderlo con `DOM.a` HTML.
+- **`createElement(tag, props, children, namespace?)`:** per tag **condivisi** tra HTML e SVG/MathML (`"a"`, `"script"`, …), il quarto argomento **`"svg"`** / **`"mathml"`** fissa il namespace corretto.
+
+### Plugin
+
+- **`withPlugins(DOM, plugins)`:** copia superficiale di `DOM` + merge di ogni `plugin.extend()` — l’oggetto **`DOM` importato non viene mutato**.
+- **`definePlugin({ name, extend })`:** i metodi esposti da **`extend`** devono essere **funzioni**.
+
+---
+
+## `jd.config` — convenzione app
+
+- Non c’è caricamento magico del file: è un **modulo** che l’app importa esplicitamente.
+- Tenere il file **piccolo**: solo `just-dom`, plugin, eventuali costanti condivise. **Evitare** di importare `main`, la tabella route o schermate che importano a loro volta `jd.config` (rischio **import circolari**).
+- Pattern tipico:
+
+```ts
+import DOM, { withPlugins } from "just-dom";
+import { createRouterPlugin } from "@just-dom/router";
+
+const router = createRouterPlugin();
+export const jd = withPlugins(DOM, [router]);
+export type Jd = typeof jd;
+```
+
+- **`main`:** `createRoot` da `"just-dom"`, **`jd`** da `./jd.config`.
+- **Altri moduli UI:** **`import { jd } from "<path>/jd.config"`** — non usare solo `DOM` se servono metodi dei plugin.
+- **Router:** `defineRoutes` di solito in `main` (o in file non importati da `jd.config`). Pattern `homePage(jd)` solo per spezzare dipendenze circolari (spiegato nella doc App setup).
+
+---
+
+## TypeScript
+
+- Tipi inclusi in `just-dom`; **nessun** `@types/just-dom` separato.
+- Ogni `DOM.<tag>` restituisce l’**elemento specifico**.
+- **`export type Jd = typeof jd`** per funzioni helper che devono vedere tutti i plugin.
+- Tipi esportati utili: `JDAllTags`, `JDTagsMap`, `JDCreateElementOptions<T>`, `JDCreateElementChildren`, `JDRef<T>`, `JDom`, `JDElementNamespace`, `JD_NAMESPACES`, `elementIsSvgOrMathML`, ecc. (vedi [TypeScript](https://just-dom.vercel.app/docs/typescript)).
+
+---
+
+## Best practice — componenti nelle app
+
+1. **PascalCase** per le unità riusabili (funzioni che restituiscono `HTMLElement` o alberi just-dom): es. `Header`, `TodoItem`.
+2. **Un componente per file** sotto **`components/`**, nome file in **kebab-case** (es. `components/header.ts`, `components/todo-list.ts`), con **export** riutilizzabili.
+
+---
 
 ## CLI `create-just-dom`
 
@@ -32,41 +122,44 @@ Pattern consigliato nelle app: un solo modulo **`jd.config.ts` / `jd.config.js`*
 npm create just-dom@latest [my-app|.|path]
 ```
 
-- **Interattivo (TTY):** tre schermate in ordine — **Linguaggio** (TS/JS) → **CSS** (nessuno, Tailwind v4, Tailwind+DaisyUI) → **Plugin** (multi-select, tutti opzionali). Navigazione **↑/↓**, **Space**, **Enter**.
-- **Non interattivo:** `--yes` / `-y` oppure flag espliciti.
+- **Interattivo (TTY):** **Linguaggio** (TS/JS) → **CSS** (nessuno, Tailwind v4, Tailwind+DaisyUI) → **Plugin** (multi-select). **↑/↓**, **Space**, **Enter**.
+- **Non interattivo:** `--yes` / `-y` o flag espliciti.
 
-| Flag | Effetto |
-|------|--------|
-| `--ts` / `--typescript` | template Vite `vanilla-ts` |
-| `--js` / `--javascript` | template `vanilla` (.js) |
-| `--plugins=<list>` | `router`, `signals`, `lucide` (comma-separated) |
-| `--no-plugins` | solo `just-dom` |
-| `--css=none` \| `tailwind` \| `tailwind-daisyui` | stack CSS |
-| `--no-css` | come `--css=none` |
-| `--pnpm` | `pnpm add` nel progetto nuovo |
-| `-y` / `--yes` | salta prompt (default: **TS**, nessun plugin, nessun CSS) |
+| Flag                                             | Effetto                                                   |
+| ------------------------------------------------ | --------------------------------------------------------- |
+| `--ts` / `--typescript`                          | template Vite `vanilla-ts`                                |
+| `--js` / `--javascript`                          | template `vanilla` (.js)                                  |
+| `--plugins=<list>`                               | `router`, `signals`, `lucide` (comma-separated)           |
+| `--no-plugins`                                   | solo `just-dom`                                           |
+| `--css=none` \| `tailwind` \| `tailwind-daisyui` | stack CSS                                                 |
+| `--no-css`                                       | come `--css=none`                                         |
+| `--pnpm`                                         | usa `pnpm add` nel progetto nuovo                         |
+| `-y` / `--yes`                                   | salta prompt (default: **TS**, nessun plugin, nessun CSS) |
 
-Se **stdin non è TTY** e mancano flag: default **TypeScript**, nessun plugin, nessun framework CSS.
+Se **stdin non è TTY** e mancano flag: default **TypeScript**, nessun plugin, nessun CSS.
 
-**Nel monorepo:** dalla root `pnpm create:app ../percorso/app` (equivale allo script che invoca `packages/create-just-dom`).
+Lo scaffold usa **`npm create vite@latest`** in modalità non interattiva. Valori **`--plugins`** / **`--css`** non riconosciuti → warning in console e valore ignorato.
 
-## Plugin ufficiali (`@just-dom/*`)
+---
 
-| Cartella `packages/plugins` | Package | Ruolo |
-|----------------------------|---------|--------|
-| `router` | `@just-dom/router` | routing client (`router`, `routerLink`, ecc.) |
-| `signals` | `@just-dom/signals` | reattività / signals |
-| `lucide` | `@just-dom/lucide` | icone Lucide come plugin |
+## Plugin ufficiali — punti operativi
 
-- Installazione tipica tramite scaffold o `pnpm`/`npm`; registrazione in **`jd.config`** con `withPlugins`.
-- **Autore di plugin:** pubblicare come `@just-dom/<nome>` (o scope coerente col progetto), **`just-dom` come peerDependency**; README del package breve, dettaglio in **`apps/site/src/content/docs/`** (Fumadocs). Release del monorepo: **Changesets** (`pnpm changeset` dalla root).
+| Pacchetto           | Registrazione tipica                                                                                                | Note                                                                                                                                                                                                                                                                    |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@just-dom/router`  | `createRouterPlugin()` in `jd.config`; **`defineRoutes([...])`** in `main` (o moduli che non importano `jd.config`) | Usare **`jd.routerLink`** per navigazione SPA (l’`a` HTML resta per link generici). Modalità **`hash`** utile senza fallback SPA lato server. Route: `path`, `index`, `layout`, `element`, `children`; **`path: "*"`** di solito ultimo tra fratelli. Peer: `just-dom`. |
+| `@just-dom/signals` | import da `@just-dom/signals` dove serve                                                                            | **`createSignal`**, **`computed`**, **`reactive`**, **`effect`** (forma `effect(el, fn)` per legare il ciclo di vita al nodo). Scrittura dello stesso valore → nessun re-run degli effetti.                                                                             |
+| `@just-dom/lucide`  | `createLucidePlugin({ icons: { … } })` oppure plugin “full set” come negli starter                                  | **`jd.lucide("NomeIcona", options)`**. Per bundle ridotti: solo le icone importate da `lucide` nel config del plugin.                                                                                                                                                   |
 
-## Quando si lavora in questo repo
+Registrare i plugin **solo** in **`jd.config`** tramite `withPlugins`.
 
-- Dopo cambi all'API core del pacchetto pubblicato: rigenerare tipi playground con `pnpm run sync:playground-types`; in CI vale `pnpm run check:playground-types` su `playground-globals.generated.ts`.
-- Prima release/publish: vedere `README.md` root per flusso `pnpm release`, playground types, OIDC.
+---
 
 ## Cosa evitare
 
-- Non confondere **`apps/site/cli.json`**: è schema **Fumadocs CLI** per il sito docs, **non** la CLI `create-just-dom`.
-- Nei plugin, non duplicare documentazione lunga nei README se esiste già la pagina in **`apps/site/src/content/docs/`** (e sul sito) — mantenere README corto e link alla doc.
+— il comando utente per creare un nuovo progetto just-dom è **`npm create just-dom@latest`**.
+
+- Usare **`DOM`** al posto di **`jd`** nei file dell’app quando sono attivi plugin: si perdono i metodi aggiunti (`routerLink`, `lucide`, ecc.).
+
+- Usare **`npm create vite@latest`** al posto di **`create-just-dom`** per creare un nuovo progetto Vite.
+
+- Usare i tag diretti svg al posto di **`DOM.svg<tag>`**.

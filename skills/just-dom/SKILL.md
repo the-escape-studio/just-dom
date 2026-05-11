@@ -1,6 +1,6 @@
 ---
 name: just-dom
-description: Guides end users of the just-dom library—Vite scaffold via npm create just-dom@latest, jd.config, withPlugins/definePlugin, DOM factories, createRoot, refs, fragments, and @just-dom/* plugins (router, signals, lucide). For a new app from scratch, lead with the create-just-dom CLI before manual setup. App structure: PascalCase reusable UI units, one per kebab-case file under components/. Use when building or explaining a just-dom app, jd.config, plugins, routing, signals, or Lucide icons.
+description: "Guides end users of the just-dom library—Vite scaffold via npm create just-dom@latest, jd.config, withPlugins/definePlugin, DOM factories, createRoot, refs, fragments, and scoped @just-dom packages (router, signals, lucide). For a new app from scratch, lead with the create-just-dom CLI before manual setup. App structure: PascalCase reusable UI units, one per kebab-case file under components/. Use when building or explaining a just-dom app, jd.config, plugins, routing, signals, or Lucide icons."
 ---
 
 # just-dom (libreria, CLI, plugin)
@@ -28,8 +28,6 @@ Per automatismi / non interattivo, usare i flag nella sezione **CLI `create-just
 - **Codice sorgente (riferimento):** [github.com/the-escape-studio/just-dom](https://github.com/the-escape-studio/just-dom)
 
 Per approfondire firme, errori ed esempi, usare le pagine **/docs/** sul sito (es. [Getting Started](https://just-dom.vercel.app/docs/getting-started), [jd.config](https://just-dom.vercel.app/docs/jd-config)).
-
----
 
 ## Libreria — in sintesi
 
@@ -77,8 +75,6 @@ Per approfondire firme, errori ed esempi, usare le pagine **/docs/** sul sito (e
 - **`withPlugins(DOM, plugins)`:** copia superficiale di `DOM` + merge di ogni `plugin.extend()` — l’oggetto **`DOM` importato non viene mutato**.
 - **`definePlugin({ name, extend })`:** i metodi esposti da **`extend`** devono essere **funzioni**.
 
----
-
 ## `jd.config` — convenzione app
 
 - Non c’è caricamento magico del file: è un **modulo** che l’app importa esplicitamente.
@@ -98,8 +94,6 @@ export type Jd = typeof jd;
 - **Altri moduli UI:** **`import { jd } from "<path>/jd.config"`** — non usare solo `DOM` se servono metodi dei plugin.
 - **Router:** `defineRoutes` di solito in `main` (o in file non importati da `jd.config`). Pattern `homePage(jd)` solo per spezzare dipendenze circolari (spiegato nella doc App setup).
 
----
-
 ## TypeScript
 
 - Tipi inclusi in `just-dom`; **nessun** `@types/just-dom` separato.
@@ -107,14 +101,10 @@ export type Jd = typeof jd;
 - **`export type Jd = typeof jd`** per funzioni helper che devono vedere tutti i plugin.
 - Tipi esportati utili: `JDAllTags`, `JDTagsMap`, `JDCreateElementOptions<T>`, `JDCreateElementChildren`, `JDRef<T>`, `JDom`, `JDElementNamespace`, `JD_NAMESPACES`, `elementIsSvgOrMathML`, ecc. (vedi [TypeScript](https://just-dom.vercel.app/docs/typescript)).
 
----
-
 ## Best practice — componenti nelle app
 
 1. **PascalCase** per le unità riusabili (funzioni che restituiscono `HTMLElement` o alberi just-dom): es. `Header`, `TodoItem`.
 2. **Un componente per file** sotto **`components/`**, nome file in **kebab-case** (es. `components/header.ts`, `components/todo-list.ts`), con **export** riutilizzabili.
-
----
 
 ## CLI `create-just-dom`
 
@@ -140,8 +130,6 @@ Se **stdin non è TTY** e mancano flag: default **TypeScript**, nessun plugin, n
 
 Lo scaffold usa **`npm create vite@latest`** in modalità non interattiva. Valori **`--plugins`** / **`--css`** non riconosciuti → warning in console e valore ignorato.
 
----
-
 ## Plugin ufficiali — punti operativi
 
 | Pacchetto           | Registrazione tipica                                                                                                | Note                                                                                                                                                                                                                                                                    |
@@ -152,14 +140,9 @@ Lo scaffold usa **`npm create vite@latest`** in modalità non interattiva. Valor
 
 Registrare i plugin **solo** in **`jd.config`** tramite `withPlugins`.
 
----
-
 ## Cosa evitare
 
-— il comando utente per creare un nuovo progetto just-dom è **`npm create just-dom@latest`**.
-
+- Confondere **altre CLI** di tooling del sito doc con **`create-just-dom`** — il comando per un nuovo progetto è **`npm create just-dom@latest`**.
 - Usare **`DOM`** al posto di **`jd`** nei file dell’app quando sono attivi plugin: si perdono i metodi aggiunti (`routerLink`, `lucide`, ecc.).
-
-- Usare **`npm create vite@latest`** al posto di **`create-just-dom`** per creare un nuovo progetto Vite.
-
-- Usare i tag diretti svg al posto di **`DOM.svg<tag>`**.
+- Avviare un nuovo progetto appena con **`npm create vite@latest`** ignorando **`npm create just-dom@latest`** quando serve proprio lo scaffold just-dom.
+- Costruire SVG a mano ignorando le fabbriche **`DOM.svg`**, **`DOM.svgCircle`**, ecc., senza una ragione precisa.

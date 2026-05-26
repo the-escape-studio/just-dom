@@ -1,6 +1,6 @@
 {
   "name": "@just-dom/signals",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Fine-grained reactive signals for just-dom",
   "homepage": "https://just-dom.vercel.app/docs/official-plugins/signals",
   "repository": {

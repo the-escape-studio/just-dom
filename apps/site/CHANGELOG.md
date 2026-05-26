@@ -1,5 +1,16 @@
 # site
 
+## 2.4.0
+
+### Minor Changes
+
+- Add `when` and `each` to @just-dom/signals. Document them on the site with new playground presets; update installation guide with agent skill instructions.
+
+### Patch Changes
+
+- Updated dependencies
+  - @just-dom/signals@1.1.0
+
 ## 2.3.4
 
 ### Patch Changes

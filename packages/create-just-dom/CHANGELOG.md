@@ -1,5 +1,11 @@
 # create-just-dom
 
+## 1.3.4
+
+### Patch Changes
+
+- Add `when` and `each` to @just-dom/signals. Document them on the site with new playground presets; update installation guide with agent skill instructions.
+
 ## 1.3.3
 
 ### Patch Changes

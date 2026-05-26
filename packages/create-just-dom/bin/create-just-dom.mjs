@@ -46,7 +46,7 @@ const OFFICIAL_PLUGINS = [
     importLine: null,
     setupLine: null,
     pluginVar: null,
-    configNote: `// @just-dom/signals — import { createSignal, reactive, effect, computed } where needed`,
+    configNote: `// @just-dom/signals — import { createSignal, reactive, effect, computed, when, each } where needed`,
   },
   {
     id: "lucide",

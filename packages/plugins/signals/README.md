@@ -16,7 +16,7 @@ No peer dependencies.
 
 ```ts
 import DOM, { createRoot } from "just-dom";
-import { createSignal, computed, reactive, effect } from "@just-dom/signals";
+import { createSignal, computed, reactive, effect, when, each } from "@just-dom/signals";
 
 const [count, setCount] = createSignal(0);
 const double = computed(() => count() * 2);
@@ -96,24 +96,57 @@ DOM.p({}, ["Count: ", reactive(count)]);
 DOM.h1({}, [reactive(() => `Hello, ${name()}`)]);
 ```
 
-### Conditional rendering
+### `when(condition, render)`
 
-Use `effect(el, fn)` inside a callback ref to surgically add or remove children without touching siblings:
+Creates an anchored DOM region that renders a branch while `condition()` is truthy. Static siblings around the region are left untouched.
 
 ```ts
-let panel: HTMLElement | null = null;
+const [show, setShow] = createSignal(false);
 
-DOM.div({
-  ref: (el) => {
-    effect(el, () => {
-      const next = show() ? DOM.p({}, ["visible"]) : null;
-      panel?.remove();
-      panel = next;
-      if (next) el.appendChild(next);
-    });
-  },
+DOM.section({}, [
+  DOM.h2({}, ["Static title"]),
+  when(show, () => DOM.p({}, ["Visible"])),
+  DOM.button({ onclick: () => setShow((v) => !v) }, ["Toggle"]),
+]);
+```
+
+Use object branches for an `else` case:
+
+```ts
+when(show, {
+  then: () => DOM.p({}, ["Visible"]),
+  else: () => DOM.p({}, ["Hidden"]),
 });
 ```
+
+Pass `{ cache: true }` to keep branch nodes and move them back later instead of recreating them.
+
+The anchored region self-cleans after it is removed from the live document.
+
+### `each(items, key, renderItem)`
+
+Renders a keyed list. Existing nodes are moved when the array order changes, so event listeners, refs, input state, and child DOM identity are preserved.
+
+`renderItem` receives an item signal and an index signal. Use `item()` inside nested `reactive()` or `effect()` calls when item data should update without recreating the node:
+
+```ts
+const [todos, setTodos] = createSignal([
+  { id: "a", label: "Write docs" },
+  { id: "b", label: "Ship package" },
+]);
+
+DOM.ul({}, [
+  each(
+    todos,
+    (todo) => todo.id,
+    (todo, index) => DOM.li({}, [
+      reactive(() => `${index() + 1}. ${todo().label}`),
+    ]),
+  ),
+]);
+```
+
+The anchored list region self-cleans after it is removed from the live document.
 
 ## Limits
 
@@ -121,6 +154,7 @@ DOM.div({
 - **No batching** — two setters in sequence run effects twice (V1).
 - **`effect(fn)` dispose is manual** — the bare form without `el` returns a dispose function you must call. Use `effect(el, fn)` inside a callback ref for automatic cleanup.
 - **`computed` is eager** — recalculates on dependency change even if nothing reads the result.
+- **`each` requires stable unique keys** — duplicate keys throw, and key changes are treated as remove + add.
 
 ## Documentation
 

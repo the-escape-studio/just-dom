@@ -322,6 +322,11 @@ createRoot(mount, app);`,
 const [hello, setHello] = createSignal("World");
 const [count, setCount] = createSignal(0);
 const [dark, setDark] = createSignal(false);
+const [todos, setTodos] = createSignal([
+  { id: "a", label: "Write docs" },
+  { id: "b", label: "Ship package" },
+  { id: "c", label: "Celebrate" },
+]);
 
 // computed — derived from other signals
 const statusTracker = computed(() => {
@@ -344,9 +349,6 @@ const iconBtn = (label: string, onClick: () => void) =>
   }, [label]);
 
 // ── Tree ──────────────────────────────────────────────
-// Conditional child — local ref, no wrapper element needed
-let badge = null;
-
 const content = DOM.div({ style: { padding: '24px' } }, [
   DOM.div({
     // effect(el, fn) in ref — reactive theme without any external variable
@@ -380,20 +382,12 @@ const content = DOM.div({ style: { padding: '24px' } }, [
     ]),
 
     // Conditional — badge appears only when count >= 10
-    DOM.div({
-      ref: (el) => {
-        effect(el, () => {
-          const next = count() >= 10
-            ? DOM.p({ style: { margin: "0 0 12px", fontSize: "13px", color: "#f59e0b" } }, [
-              "🏆 Legendary score — nice!",
-            ])
-            : null;
-          badge?.remove();
-          badge = next;
-          if (next) el.appendChild(next);
-        });
-      },
-    }),
+    when(
+      () => count() >= 10,
+      () => DOM.p({ style: { margin: "0 0 12px", fontSize: "13px", color: "#f59e0b" } }, [
+        "🏆 Legendary score — nice!",
+      ])
+    ),
 
     // Controls
     DOM.div({ style: { display: "flex", gap: "8px", marginBottom: "20px" } }, [
@@ -428,6 +422,41 @@ const content = DOM.div({ style: { padding: '24px' } }, [
           color: "inherit", outline: "none", width: "100%",
         },
       }),
+    ]),
+
+    // each() — keyed list, existing nodes move on reorder
+    DOM.div({ style: { marginTop: "22px" } }, [
+      DOM.div({ style: { display: "flex", gap: "8px", marginBottom: "10px" } }, [
+        DOM.button({
+          onclick: () => setTodos((items) => [items[2], items[0], items[1]]),
+          style: {
+            padding: "6px 10px", borderRadius: "6px", fontSize: "12px",
+            border: "1px solid currentColor", background: "transparent",
+            color: "inherit", cursor: "pointer",
+          },
+        }, ["Reorder"]),
+        DOM.button({
+          onclick: () => setTodos((items) =>
+            items.map((item) =>
+              item.id === "b" ? { ...item, label: item.label + "!" } : item
+            )
+          ),
+          style: {
+            padding: "6px 10px", borderRadius: "6px", fontSize: "12px",
+            border: "1px solid currentColor", background: "transparent",
+            color: "inherit", cursor: "pointer",
+          },
+        }, ["Update b"]),
+      ]),
+      DOM.ul({ style: { margin: "0", paddingLeft: "20px", fontSize: "13px" } }, [
+        each(
+          todos,
+          (todo) => todo.id,
+          (todo, index) => DOM.li({ "data-id": todo().id }, [
+            reactive(() => \`\${index() + 1}. \${todo().label}\`),
+          ])
+        ),
+      ]),
     ]),
   ])
 ])

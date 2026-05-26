@@ -19,7 +19,7 @@ No peer dependencies. The package works standalone alongside any Just DOM setup.
 
 ```ts
 import DOM, { createRoot } from "just-dom";
-import { createSignal, computed, reactive, effect } from "@just-dom/signals";
+import { createSignal, computed, reactive, effect, when, each } from "@just-dom/signals";
 
 const [count, setCount] = createSignal(0);
 const double = computed(() => count() * 2);
@@ -153,6 +153,83 @@ The text node **self-cleans**: once removed from the live document its internal 
 
 ---
 
+### `when`
+
+```ts
+function when(
+  condition: () => unknown,
+  render: () => Node | string | null | undefined,
+  options?: { cache?: boolean },
+): DocumentFragment
+```
+
+Creates an anchored DOM region that renders `render()` while `condition()` is truthy. Static siblings around the returned fragment are left untouched:
+
+```ts
+const [show, setShow] = createSignal(false);
+
+DOM.section({}, [
+  DOM.h2({}, ["Static title"]),
+  when(show, () => DOM.p({}, ["Panel is visible"])),
+  DOM.button(
+    { onclick: () => setShow((v) => !v) },
+    [reactive(() => show() ? "Hide" : "Show")],
+  ),
+]);
+```
+
+Use object branches for an `else` case:
+
+```ts
+when(show, {
+  then: () => DOM.p({}, ["Visible"]),
+  else: () => DOM.p({}, ["Hidden"]),
+});
+```
+
+By default a branch is recreated when it is shown again. Pass `{ cache: true }` to keep branch nodes and move them back later, preserving DOM state such as input values.
+
+The anchored region **self-cleans** after it is removed from the live document, with the same one-tick lag as `reactive`.
+
+---
+
+### `each`
+
+```ts
+function each<T, K extends string | number | symbol>(
+  items: () => readonly T[],
+  key: (item: T, index: number) => K,
+  renderItem: (item: () => T, index: () => number) => Node | string | null | undefined,
+): DocumentFragment
+```
+
+Renders a keyed list. Existing nodes are moved when the array order changes, so event listeners, refs, input state, and child DOM identity are preserved.
+
+`renderItem` receives an item signal and an index signal. Use `item()` inside nested `reactive()` or `effect()` calls when item data should update without recreating the node:
+
+```ts
+const [todos, setTodos] = createSignal([
+  { id: "a", label: "Write docs" },
+  { id: "b", label: "Ship package" },
+]);
+
+DOM.ul({}, [
+  each(
+    todos,
+    (todo) => todo.id,
+    (todo, index) => DOM.li({}, [
+      reactive(() => `${index() + 1}. ${todo().label}`),
+    ]),
+  ),
+]);
+```
+
+Keys must be unique and stable. Duplicate keys throw, and changing a key is treated as removing the old node and adding a new one.
+
+The anchored list region **self-cleans** after it is removed from the live document.
+
+---
+
 ## Reactive attributes and styles
 
 Use `effect(el, fn)` inside a **callback ref** to bind attributes, classes, and styles reactively. The element is available directly — no separate variable needed:
@@ -197,26 +274,16 @@ const box = DOM.div({
 
 ## Conditional rendering
 
-`effect(el, fn)` inside a callback ref lets you surgically add or remove children without touching siblings — keep a local reference to the current node and swap it:
+Use `when` to surgically add or remove children without touching siblings:
 
 ```ts
 const [show, setShow] = createSignal(false);
 
-let panel: HTMLElement | null = null;
-
-DOM.section({
-  ref: (el) => {
-    effect(el, () => {
-      const next = show()
-        ? DOM.div({ style: { color: "#16a34a" } }, ["Panel is visible"])
-        : null;
-      panel?.remove();
-      panel = next;
-      if (next) el.appendChild(next);
-    });
-  },
-}, [
+DOM.section({}, [
   DOM.h2({}, ["Static title"]),    // never touched
+  when(show, () =>
+    DOM.div({ style: { color: "#16a34a" } }, ["Panel is visible"])
+  ),
   DOM.button(
     { onclick: () => setShow((v) => !v) },
     [reactive(() => show() ? "Hide" : "Show")],
@@ -338,6 +405,23 @@ A `computed` recalculates **immediately** when a dependency changes, even if not
 | **Returns** | A live `Text` DOM node |
 | **Self-cleanup** | Disposes its internal effect when removed from the live document |
 
+### `when`
+
+| | |
+|---|---|
+| **Signatures** | `(condition, render, options?) => DocumentFragment` · `(condition, branches, options?) => DocumentFragment` |
+| **Returns** | An anchored DOM region as a `DocumentFragment` |
+| **Cache option** | `{ cache: true }` reuses branch nodes instead of recreating them |
+
+### `each`
+
+| | |
+|---|---|
+| **Signature** | `(items, key, renderItem) => DocumentFragment` |
+| **Returns** | An anchored keyed list region |
+| **Render item** | Receives `(itemSignal, indexSignal)` |
+| **Keys** | Must be unique `string`, `number`, or `symbol` values |
+
 ---
 
 ## Exports
@@ -348,6 +432,8 @@ A `computed` recalculates **immediately** when a dependency changes, even if not
 | `effect` | Auto-tracking side effect with optional self-cleanup |
 | `computed` | Derived read-only signal |
 | `reactive` | Auto-updating `Text` DOM node |
+| `when` | Anchored conditional DOM region |
+| `each` | Keyed list renderer that moves existing DOM nodes |
 | `Signal<T>` | Getter function type |
 | `SignalSetter<T>` | Setter function type |
 | `SignalPair<T>` | `[Signal<T>, SignalSetter<T>]` |

@@ -12,6 +12,9 @@ type SignalSetter<T> = (next: T | ((prev: T) => T)) => void;
 /** Cleanup function returned by \`effect()\`. */
 type EffectDispose = () => void;
 
+/** Values that can be mounted by DOM-aware signal helpers. */
+type SignalRenderable = Node | string | null | undefined;
+
 /**
  * Creates a reactive primitive.
  * Returns \`[get, set]\`: call \`get()\` to read, \`set(next)\` to update.
@@ -43,4 +46,29 @@ declare function computed<T>(fn: () => T): Signal<T>;
  * Self-cleans when the node is removed from the live document.
  */
 declare function reactive(signal: () => unknown): Text;
+
+/**
+ * Creates an anchored DOM region that renders \`render()\` while \`condition()\` is truthy.
+ * Static siblings around the returned fragment are left untouched.
+ */
+declare function when(
+  condition: Signal<unknown>,
+  render: () => SignalRenderable,
+  options?: { cache?: boolean },
+): DocumentFragment;
+declare function when(
+  condition: Signal<unknown>,
+  branches: { then: () => SignalRenderable; else?: () => SignalRenderable },
+  options?: { cache?: boolean },
+): DocumentFragment;
+
+/**
+ * Renders a keyed list by moving existing nodes when order changes.
+ * \`renderItem\` receives per-item and per-index signals for fine-grained updates.
+ */
+declare function each<T, K extends string | number | symbol>(
+  items: Signal<readonly T[]>,
+  key: (item: T, index: number) => K,
+  renderItem: (item: Signal<T>, index: Signal<number>) => SignalRenderable,
+): DocumentFragment;
 `.trim();

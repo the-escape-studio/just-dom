@@ -9,7 +9,14 @@ import DOM, {
 } from "just-dom";
 import { createLucidePlugin } from "@just-dom/lucide";
 import { createRouterPlugin, defineRoutes } from "@just-dom/router";
-import { createSignal, effect, computed, reactive } from "@just-dom/signals";
+import {
+  createSignal,
+  effect,
+  computed,
+  reactive,
+  when,
+  each,
+} from "@just-dom/signals";
 import { House, Heart, Loader, Menu, Search, Star } from "lucide";
 import { PLAYGROUND_LUCIDE_TYPES } from "./playground-lucide-ambient";
 import { PLAYGROUND_ROUTER_TYPES } from "./playground-router-ambient";
@@ -163,6 +170,8 @@ const PlaygroundView = () => {
         "effect",
         "computed",
         "reactive",
+        "when",
+        "each",
         "LUCIDE",
         "mount",
         "console",
@@ -205,6 +214,8 @@ const PlaygroundView = () => {
         effect,
         computed,
         reactive,
+        when,
+        each,
         PLAYGROUND_LUCIDE_ICONS,
         mountEl,
         scopedConsole,

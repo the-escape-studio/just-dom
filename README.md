@@ -31,7 +31,7 @@ pnpm create:app ../path/to/my-app
 # same as: node ./packages/create-just-dom/bin/create-just-dom.mjs ../path/to/my-app
 ```
 
-Releases and versioning use [Changesets](https://github.com/changesets/changesets) (`pnpm changeset` from the root).
+Releases and versioning use [Changesets](https://github.com/changesets/changesets) (`pnpm changeset` from the root). Full step-by-step guide: **[docs/release.md](docs/release.md)**.
 
 - **`pnpm release`** (used by the release workflow before `changeset publish`) builds the publishable packages, then **regenerates** [playground types](apps/site/README.md#playground-types) from `just-dom`’s `dist`, so the committed file matches the API about to ship.
 - **Publishing to npm:** merge the versioned commits to **`main`** and let [`.github/workflows/release.yml`](.github/workflows/release.yml) publish via OIDC (no OTP). For a **local** publish with an npm account that has 2FA, pass a one-time password, e.g. `NPM_CONFIG_OTP=123456 pnpm release` (or `pnpm exec changeset publish --otp 123456`).

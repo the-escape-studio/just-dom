@@ -24,18 +24,23 @@ interface RouteDefinition {
   children?: readonly RouteDefinition[];
 }
 
+type ScrollBehavior = false | "restore";
+
 interface CreateRouterPluginOptions {
   mode?: RouterMode;
   basename?: string;
+  scroll?: ScrollBehavior;
 }
 
 interface RouterMountOptions {
   basename?: string;
+  scroll?: ScrollBehavior;
 }
 
 type RouterLinkProps = Record<string, unknown> & {
   href: string;
   replace?: boolean;
+  preventScrollReset?: boolean;
 };
 
 interface RouterLinkRenderContext {
@@ -74,6 +79,7 @@ declare function navigate(
     mode?: RouterMode;
     basename?: string;
     targetWindow?: Window;
+    preventScrollReset?: boolean;
   },
 ): void;
 `.trim();

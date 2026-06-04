@@ -5,7 +5,14 @@ import {
 } from "just-dom";
 import { matchRouteTree, pathnameToSegments } from "./match";
 import { parsePathFromTo } from "./parse-path";
+import {
+  getScrollKey,
+  restoreScrollPosition,
+  saveScrollPosition,
+  scrollWindowToTop,
+} from "./scroll";
 import type {
+  NavAction,
   NavigateOptions,
   RouteDefinition,
   RouteMatchContext,
@@ -15,6 +22,7 @@ import type {
   RouterMode,
   RouterMountOptions,
   RouterPluginDefaults,
+  ScrollBehavior,
 } from "./types";
 
 export type {
@@ -29,13 +37,39 @@ export type {
   RouterMode,
   RouterMountOptions,
   RouterPluginDefaults,
+  ScrollBehavior,
+  NavAction,
 } from "./types";
 
 export { matchRouteTree, consumeRoute, pathnameToSegments } from "./match";
 export type { ConsumeRouteResult, PatternParts } from "./match";
 
 const listeners = new Set<() => void>();
-const windowListenerCounts = new Map<Window, number>();
+const windowHistoryHandlers = new Map<
+  Window,
+  { count: number; onPop: () => void; onHash: () => void }
+>();
+
+interface WindowNavState {
+  pendingNav: NavAction;
+  internalNav: boolean;
+  preventScrollReset: boolean;
+}
+
+const windowNavState = new WeakMap<Window, WindowNavState>();
+
+function getNavState(win: Window): WindowNavState {
+  let state = windowNavState.get(win);
+  if (!state) {
+    state = {
+      pendingNav: "PUSH",
+      internalNav: false,
+      preventScrollReset: false,
+    };
+    windowNavState.set(win, state);
+  }
+  return state;
+}
 
 function flush(): void {
   for (const fn of listeners) {
@@ -43,23 +77,42 @@ function flush(): void {
   }
 }
 
+function onHistoryNavigation(win: Window): void {
+  const state = getNavState(win);
+  if (!state.internalNav) {
+    state.pendingNav = "POP";
+  }
+  flush();
+}
+
 function subscribeWindow(win: Window, listener: () => void): () => void {
   listeners.add(listener);
-  const next = (windowListenerCounts.get(win) ?? 0) + 1;
-  windowListenerCounts.set(win, next);
-  if (next === 1) {
-    win.addEventListener("popstate", flush);
-    win.addEventListener("hashchange", flush);
+  let handlers = windowHistoryHandlers.get(win);
+  if (!handlers) {
+    const onPop = (): void => {
+      onHistoryNavigation(win);
+    };
+    const onHash = (): void => {
+      onHistoryNavigation(win);
+    };
+    win.addEventListener("popstate", onPop);
+    win.addEventListener("hashchange", onHash);
+    handlers = { count: 0, onPop, onHash };
+    windowHistoryHandlers.set(win, handlers);
   }
+  handlers.count += 1;
+
   return () => {
     listeners.delete(listener);
-    const count = windowListenerCounts.get(win) ?? 1;
-    if (count <= 1) {
-      windowListenerCounts.delete(win);
-      win.removeEventListener("popstate", flush);
-      win.removeEventListener("hashchange", flush);
-    } else {
-      windowListenerCounts.set(win, count - 1);
+    const current = windowHistoryHandlers.get(win);
+    if (!current) {
+      return;
+    }
+    current.count -= 1;
+    if (current.count <= 0) {
+      win.removeEventListener("popstate", current.onPop);
+      win.removeEventListener("hashchange", current.onHash);
+      windowHistoryHandlers.delete(win);
     }
   };
 }
@@ -341,7 +394,13 @@ function applyResolvedRouterLinkProps(
   anchor: HTMLAnchorElement,
   props: RouterLinkProps,
 ): void {
-  const { href, replace: _replace, onclick: _onclick, ...rest } = props;
+  const {
+    href,
+    replace: _replace,
+    onclick: _onclick,
+    preventScrollReset: _preventScrollReset,
+    ...rest
+  } = props;
   anchor.removeAttribute("style");
   anchor.removeAttribute("aria-current");
   applyAnchorOptions(anchor, {
@@ -358,6 +417,10 @@ function navigateInternal(
   win: Window,
 ): void {
   const replace = options?.replace === true;
+  const navState = getNavState(win);
+  navState.internalNav = true;
+  navState.pendingNav = replace ? "REPLACE" : "PUSH";
+  navState.preventScrollReset = options?.preventScrollReset === true;
 
   if (mode === "hash") {
     const { pathname: rawPath, search } = parsePathFromTo(to);
@@ -373,12 +436,16 @@ function navigateInternal(
       win.history.pushState(win.history.state, "", newUrl);
     }
     flush();
+    win.setTimeout(() => {
+      navState.internalNav = false;
+    }, 0);
     return;
   }
 
   const url = new URL(to, win.location.href);
   const sameOrigin = url.origin === win.location.origin;
   if (!sameOrigin) {
+    navState.internalNav = false;
     win.location.assign(url.toString());
     return;
   }
@@ -393,6 +460,9 @@ function navigateInternal(
     win.history.pushState(win.history.state, "", nextUrl);
   }
   flush();
+  win.setTimeout(() => {
+    navState.internalNav = false;
+  }, 0);
 }
 
 /**
@@ -418,6 +488,7 @@ export function defineRoutes<const T extends readonly RouteDefinition[]>(
 export interface CreateRouterPluginOptions {
   mode?: RouterMode;
   basename?: string;
+  scroll?: ScrollBehavior;
 }
 
 export function createRouterPlugin(
@@ -426,6 +497,7 @@ export function createRouterPlugin(
   const defaults: RouterPluginDefaults = {
     mode: pluginDefaults.mode ?? "browser",
     basename: pluginDefaults.basename ?? "",
+    scroll: pluginDefaults.scroll ?? "restore",
   };
 
   return definePlugin({
@@ -437,8 +509,33 @@ export function createRouterPlugin(
       ): HTMLDivElement => {
         const mode = defaults.mode;
         const basename = mountOptions.basename ?? defaults.basename;
+        const scrollBehavior = mountOptions.scroll ?? defaults.scroll;
 
         const container = document.createElement("div");
+        let lastScrollKey: string | null = null;
+
+        const applyScrollAfterRender = (
+          win: Window,
+          scrollKey: string,
+        ): void => {
+          if (scrollBehavior === false) {
+            return;
+          }
+
+          const navState = getNavState(win);
+          const { pendingNav, preventScrollReset } = navState;
+          const storage = win.sessionStorage;
+
+          queueMicrotask(() => {
+            if (pendingNav === "POP") {
+              restoreScrollPosition(storage, scrollKey, win);
+            } else if (!preventScrollReset) {
+              scrollWindowToTop(win);
+            }
+            navState.pendingNav = "PUSH";
+            navState.preventScrollReset = false;
+          });
+        };
 
         const render = (): void => {
           const doc = container.ownerDocument;
@@ -458,23 +555,34 @@ export function createRouterPlugin(
             search: new URLSearchParams(search),
             pathname,
           };
+          const scrollKey = getScrollKey(pathname, ctx.search);
+
+          if (scrollBehavior !== false && lastScrollKey !== null) {
+            saveScrollPosition(win.sessionStorage, lastScrollKey, win);
+          }
 
           if (!hit) {
             container.replaceChildren(
               doc.createTextNode("No route matched."),
             );
+            lastScrollKey = scrollKey;
+            applyScrollAfterRender(win, scrollKey);
             return;
           }
 
           try {
             const el = composeMatched(hit.chain, ctx);
             container.replaceChildren(el);
+            lastScrollKey = scrollKey;
+            applyScrollAfterRender(win, scrollKey);
           } catch (err) {
             const message =
               err instanceof Error ? err.message : String(err);
             container.replaceChildren(
               doc.createTextNode(`Router error: ${message}`),
             );
+            lastScrollKey = scrollKey;
+            applyScrollAfterRender(win, scrollKey);
           }
         };
 
@@ -548,6 +656,7 @@ export function createRouterPlugin(
               basename,
               {
                 replace: replace === true,
+                preventScrollReset: currentProps.preventScrollReset === true,
               },
               linkWin,
             );
@@ -559,6 +668,7 @@ export function createRouterPlugin(
             basename,
             {
               replace: replace === true,
+              preventScrollReset: currentProps.preventScrollReset === true,
             },
             linkWin,
           );

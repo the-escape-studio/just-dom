@@ -98,6 +98,22 @@ import { navigate } from "@just-dom/router";
 navigate("/users/2", { mode: "browser" });
 ```
 
+### Scroll restoration
+
+By default (`scroll: "restore"`), forward navigation scrolls to the top and the browser back/forward buttons restore the previous scroll position (stored in `sessionStorage` per pathname + query).
+
+```ts
+// Opt out globally
+createRouterPlugin({ scroll: false });
+
+// Or per mount
+jd.router(routes, { scroll: false });
+
+// Keep scroll position on a specific link or navigate() call
+jd.routerLink({ href: "/more", preventScrollReset: true }, ["Load more"]);
+navigate("/more", { preventScrollReset: true });
+```
+
 ## API
 
 | Export | Description |

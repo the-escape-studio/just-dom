@@ -82,6 +82,24 @@ const router = createRouterPlugin({ mode: "hash" });
 
 Links can use either `#/path` or normal paths like `/path` — both are translated into hash updates.
 
+## Scroll restoration
+
+By default, `createRouterPlugin()` uses `scroll: "restore"`:
+
+- **Push / replace** (new in-app navigation): scrolls `window` to the top.
+- **Back / forward**: restores the saved scroll position for that pathname + query (`sessionStorage`).
+
+```ts
+// Legacy behavior (scroll unchanged on navigation)
+const router = createRouterPlugin({ scroll: false });
+// or per mount:
+jd.router(routes, { scroll: false });
+
+// Skip scroll-to-top for one link or navigate() call
+jd.routerLink({ href: "/feed", preventScrollReset: true }, ["Load more"]);
+navigate("/feed", { preventScrollReset: true });
+```
+
 ## Route tree
 
 Routes are a **readonly array** at each depth. Typical shape:
@@ -182,6 +200,8 @@ Only then fall back to small factories like `homePage(jd)` **or** `import type {
 function createRouterPlugin(options?: {
   mode?: "browser" | "hash";
   basename?: string;
+  /** Default: `"restore"`. Use `false` to leave scroll unchanged. */
+  scroll?: false | "restore";
 }): JDPlugin<{
   router: (
     routes: readonly RouteDefinition[],
@@ -192,6 +212,7 @@ function createRouterPlugin(options?: {
       | (JDCreateElementOptions<"a"> & {
           href: string;
           replace?: boolean;
+          preventScrollReset?: boolean;
         })
       | ((ctx: {
           isActive: boolean;
@@ -201,6 +222,7 @@ function createRouterPlugin(options?: {
         }) => JDCreateElementOptions<"a"> & {
           href: string;
           replace?: boolean;
+          preventScrollReset?: boolean;
         }),
     children?: JDCreateElementChildren,
   ) => HTMLAnchorElement;
@@ -242,7 +264,12 @@ Identity helper that preserves literal types for route arrays.
 ```ts
 function navigate(
   to: string,
-  options?: { replace?: boolean; mode?: RouterMode; basename?: string },
+  options?: {
+    replace?: boolean;
+    mode?: RouterMode;
+    basename?: string;
+    preventScrollReset?: boolean;
+  },
 ): void;
 ```
 
@@ -259,4 +286,4 @@ Imperative navigation; defaults to `mode: "browser"` if omitted.
 | `matchRouteTree` | Low-level matcher |
 | `RouteDefinition`, `RouteMatchContext` | Route tree and render context types |
 | `RouteElementRenderer`, `RouteLayoutRenderer` | Typed signatures for `element` and `layout` |
-| `RouterMode`, `RouterMountOptions`, `NavigateOptions` | Router configuration types |
+| `RouterMode`, `RouterMountOptions`, `NavigateOptions`, `ScrollBehavior` | Router configuration types |

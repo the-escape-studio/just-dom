@@ -1,5 +1,12 @@
 # site
 
+## 2.4.1
+
+### Patch Changes
+
+- Updated dependencies [320b9ce]
+  - @just-dom/router@1.1.0
+
 ## 2.4.0
 
 ### Minor Changes

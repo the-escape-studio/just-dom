@@ -33,8 +33,8 @@ pnpm create:app ../path/to/my-app
 
 Releases and versioning use [Changesets](https://github.com/changesets/changesets) (`pnpm changeset` from the root). Full step-by-step guide: **[docs/release.md](docs/release.md)**.
 
-- **`pnpm release`** (used by the release workflow before `changeset publish`) builds the publishable packages, then **regenerates** [playground types](apps/site/README.md#playground-types) from `just-dom`’s `dist`, so the committed file matches the API about to ship.
-- **Publishing to npm:** merge the versioned commits to **`main`** and let [`.github/workflows/release.yml`](.github/workflows/release.yml) publish via OIDC (no OTP). For a **local** publish with an npm account that has 2FA, pass a one-time password, e.g. `NPM_CONFIG_OTP=123456 pnpm release` (or `pnpm exec changeset publish --otp 123456`).
+- **`pnpm release`** builds the publishable packages, **regenerates** [playground types](apps/site/README.md#playground-types) from `just-dom`’s `dist`, then runs `changeset publish`. See **[docs/release.md](docs/release.md)** for the full flow.
+- **Publishing to npm** is done **locally** (npm login + 2FA OTP), e.g. `npm publish --access public --otp=123456` from each package directory, or `NPM_CONFIG_OTP=123456 pnpm exec changeset publish` from the repo root.
 - **Wrong semver on npm (e.g. mistaken major):** within npm’s unpublish window you can remove a version, e.g. `npm unpublish just-dom@3.0.0` and `npm unpublish @just-dom/lucide@2.0.0`. If unpublish is not allowed, publish the corrected versions from this repo (`pnpm release`) — `latest` moves to the version you just published — then deprecate the bad tarballs, e.g. `npm deprecate just-dom@3.0.0 "wrong semver; use 2.0.2"` and `npm deprecate @just-dom/lucide@2.0.0 "wrong semver; use 1.0.2"`.
 - If you only change the core API, sync the playground by hand: `pnpm run sync:playground-types` (or rely on the check below).
 - **PRs** run `pnpm run check:playground-types` — the job fails if `playground-globals.generated.ts` is out of date; commit the regenerated file or run the sync command.

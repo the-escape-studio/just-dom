@@ -1,6 +1,6 @@
 # Release: versioni, changelog e pubblicazione npm
 
-Guida operativa per pubblicare i pacchetti del monorepo **just-dom** dopo aver completato le modifiche. Il flusso ufficiale usa [Changesets](https://github.com/changesets/changesets); la pubblicazione su **npm** avviene in CI su `main` (OIDC, senza OTP) oppure in locale con account npm + 2FA.
+Guida operativa per pubblicare i pacchetti del monorepo **just-dom** dopo aver completato le modifiche. Il versioning usa [Changesets](https://github.com/changesets/changesets); la **pubblicazione su npm** va fatta **in locale** con account npm e OTP (2FA).
 
 ## Pacchetti pubblicabili
 
@@ -112,81 +112,84 @@ Dopo review, merge su `main`.
 
 ---
 
-## 4. Release stabile (automatica su `main`)
+## 4. Applicare le versioni
 
-Il workflow [`.github/workflows/release.yml`](../.github/workflows/release.yml) (`changesets/action`):
-
-1. Se ci sono changeset pendenti → apre (o aggiorna) una PR **“Version Packages”** con:
-   - bump di `version` in ogni `package.json` interessato;
-   - `CHANGELOG.md` aggiornati;
-   - rimozione dei file in `.changeset/`.
-2. Quando quella PR è **mergiata** su `main`, lo stesso workflow esegue `pnpm release` e pubblica su npm.
-
-Comandi equivalenti in locale (solo per capire cosa fa la CI):
+Dopo il merge su `main` (o sulla branch di release), dalla root:
 
 ```bash
-# Applica versioni + changelog (come la PR "Version Packages")
+git checkout main
+git pull
 pnpm version-packages
-
-# Build pacchetti pubblicati dal root script + tipi playground + publish
-pnpm release
 ```
 
-Lo script `release` nel root [`package.json`](../package.json) oggi esegue:
+Questo aggiorna `version` nei `package.json`, i `CHANGELOG.md` dei package e rimuove i file in `.changeset/`.
+
+Committa e pusha:
 
 ```bash
-turbo build --filter=just-dom --filter=@just-dom/lucide --filter=@just-dom/router
-pnpm --filter site run generate:playground-types
-changeset publish
+git add -A
+git commit -m "chore: version packages"
+git push origin main
 ```
-
-Se in una release pubblichi **solo** `@just-dom/signals` o `create-just-dom`, assicurati che il build sia a posto prima del publish (es. aggiungi il filter a `release` o builda a mano):
-
-```bash
-pnpm --filter @just-dom/signals build
-```
-
-### Flusso riassunto (stabile)
-
-```mermaid
-flowchart TD
-  A[PR con codice + file .changeset] --> B[Merge su main]
-  B --> C{Changesets pendenti?}
-  C -->|sì| D[PR Version Packages]
-  D --> E[Merge Version Packages]
-  C -->|no| F[Publish npm]
-  E --> F
-```
-
-Non serve OTP in CI: **npm Trusted Publishing** (OIDC) sul repo GitHub.
 
 ---
 
-## 5. Release in locale (alternativa)
+## 5. Pubblicare su npm (locale)
 
-Utile per debug o se la CI non può pubblicare.
-
-```bash
-pnpm install
-pnpm version-packages   # opzionale: se vuoi bumpare senza la PR bot
-pnpm release
-```
-
-Con **2FA** npm attiva:
-
-```bash
-NPM_CONFIG_OTP=123456 pnpm release
-# oppure
-pnpm exec changeset publish --otp 123456
-```
-
-Login npm (se serve):
+### Login
 
 ```bash
 npm login
+npm whoami
 ```
 
-Verifica pubblicazione:
+### Build
+
+Dalla root, builda i package da pubblicare:
+
+```bash
+pnpm exec turbo build --filter=just-dom --filter=@just-dom/lucide --filter=@just-dom/router --filter=@just-dom/signals
+pnpm run sync:playground-types
+```
+
+Oppure usa lo script root (build + tipi playground, senza publish automatico se preferisci publish singolo):
+
+```bash
+pnpm exec turbo build --filter=just-dom --filter=@just-dom/lucide --filter=@just-dom/router
+pnpm --filter site run generate:playground-types
+```
+
+Se pubblichi **solo** un package, builda quello:
+
+```bash
+pnpm --filter @just-dom/router build
+```
+
+### Publish con OTP
+
+Con **2FA** npm attiva, pubblica dalla cartella del package (consigliato per scope `@just-dom/*`):
+
+```bash
+cd packages/plugins/router
+npm publish --access public --otp=123456
+```
+
+Oppure dalla root con Changesets (tutti i package con versione nuova):
+
+```bash
+NPM_CONFIG_OTP=123456 pnpm exec changeset publish
+# oppure
+NPM_CONFIG_OTP=123456 pnpm release
+```
+
+`create-just-dom` non ha `dist`:
+
+```bash
+cd packages/create-just-dom
+npm publish --access public --otp=123456
+```
+
+### Verifica
 
 ```bash
 npm view just-dom version
@@ -195,18 +198,7 @@ npm view @just-dom/router version
 
 ---
 
-## 6. Canale `dev` (prerelease)
-
-Push sul branch **`dev`** attiva `release-dev` nello stesso workflow:
-
-- Bump versione con suffisso `dev.<run>.<attempt>.<sha>` per `just-dom` e `@just-dom/lucide` (vedi workflow).
-- `npm publish --tag dev` (non aggiorna `latest`).
-
-Non usa Changesets; è un canale di anteprima separato. Per release stabili usare sempre `main` + changeset.
-
----
-
-## 7. Dopo la pubblicazione
+## 6. Dopo la pubblicazione
 
 - Controlla le versioni su [npm](https://www.npmjs.com/org/just-dom) e per `just-dom` / `create-just-dom`.
 - Il sito su Vercel si aggiorna al deploy di `main` (documentazione); i consumer npm vedono subito i nuovi tarball.
@@ -220,7 +212,7 @@ Entro la finestra di unpublish npm:
 npm unpublish just-dom@<version-sbagliata>
 ```
 
-Se non è consentito, pubblica la versione corretta con `pnpm release` e depreca:
+Se non è consentito, pubblica la versione corretta e depreca:
 
 ```bash
 npm deprecate just-dom@<version-sbagliata> "wrong semver; use <versione-corretta>"
@@ -238,8 +230,9 @@ Vedi anche le note in [README.md](../README.md#development).
 | API core cambiata | `pnpm run check:playground-types` |
 | Dichiarare bump | `pnpm changeset` → commit `.changeset/*.md` |
 | Merge feature PR | → `main` |
-| Merge PR versioni | bot Changesets → merge |
-| Publish | automatico (`pnpm release` in CI) |
+| Bump versioni | `pnpm version-packages` → commit + push |
+| Build | `turbo build` sui package toccati |
+| Publish npm | `npm publish --access public --otp=…` (per package o `changeset publish`) |
 | Verifica npm | `npm view <pkg> version` |
 
 ---

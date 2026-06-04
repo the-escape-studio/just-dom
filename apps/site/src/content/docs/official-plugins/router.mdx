@@ -233,6 +233,13 @@ function createRouterPlugin(options?: {
 
 Mounts a router into a `HTMLDivElement` and keeps it in sync with navigation.
 
+```ts
+jd.router(routes);
+jd.router(routes, { basename: "/app", scroll: false });
+```
+
+`mountOptions.scroll` overrides the plugin default (`"restore"` or `false`). See [Scroll restoration](#scroll-restoration).
+
 The returned element may expose `dispose()` (non-standard) to remove internal `popstate` / `hashchange` subscriptions when you tear the UI down.
 
 ### routerLink
